@@ -34,7 +34,7 @@ spy_data['Cumulative_Return'] = (1 + spy_data['Daily_Return']).cumprod()
 
 # Plot both cumulative returns on the same chart
 plt.figure(figsize=(12, 6))
-plt.plot(data.index, data['Cumulative_Return'], label='SMA Strategy')
+plt.plot(data.index, data['Cumulative_Return'], label='RSI Strategy')
 plt.plot(spy_data.index, spy_data['Cumulative_Return'], label='SPY')
 plt.xlabel('Date'); plt.ylabel('Cumulative Returns'); plt.legend()
 plt.show(); plt.close()
