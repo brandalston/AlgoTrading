@@ -16,3 +16,4 @@ Copyright 2024 Brandon C. Alston
   - Two-state discrete approximation to continuous GBM
     - The mean and variance of the binomial model match mean and variance of the lognormal distribution underlying GBM
   - Adapted to incorporate time-varying volatility, price path-dependent options, and price derivatives depending on more than one asset with two-variable binomial trees
+  - 

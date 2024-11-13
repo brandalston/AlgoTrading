@@ -252,9 +252,7 @@ double BSMOption::calcBSCallPrice(double vol, double rate, double div, double st
     return callprice;
 }
 
-double BSMOption::calcBSPutPrice(double vol, double rate, double div,
-double strike, double price, double T)
-{
+double BSMOption::calcBSPutPrice(double vol, double rate, double div, double strike, double price, double T) {
     double prob1;
     double prob2;
     double putprice;

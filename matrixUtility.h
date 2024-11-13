@@ -13,6 +13,7 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <ql/quantlib.h>
 using QuantLib;
 using namespace std;
 
@@ -33,7 +34,7 @@ public:
         double dw[4] = {0.0}; // stores correlated deviates
         DiagonalMatrix D(m); // diagonal matrix
         Matrix V(m,m); // m x n matrix
-        D = genEigenValues(R); // get eigenvalues
+        D = EigenValues(R); // get eigenvalues
         V = genEigenVectors(R); // get eigenvectors
         // store eigenvalues
         for (i = 0; i < m; i++) {
