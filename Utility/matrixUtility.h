@@ -23,9 +23,8 @@ public:
     {
         int i, j;
         double sum[4] = {0.0};
-        double deviate = 0.0; int m = R.Nrows(); // standard normal deviate
-        // number of rows in correlation
-        // matrix
+        double deviate = 0.0; // standard normal deviate
+        int m = R.Nrows(); // number of rows in correlation matrix
         vector<double> dz; // vector of correlated deviates
         vector<double> eigenValue; // vector of eigenvalues
         vector<double> eigenVector[4]; // array of vector of eigenvectors

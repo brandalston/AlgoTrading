@@ -6,8 +6,11 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(AlgoTrading main.cpp
         main.cpp
         packages.h
-        statUtility.h
-        matrixUtility.h
+        Utility/statUtility.h
+        Utility/matrixUtility.h
         constants.h
+        Monte_Carlo_Methods/MonteCarlo.h
+        BSM_Pricing_Fundamentals/pathDependentProcesses.h
+        Utility/genericUtility.h
 )
-target_include_directories (AlgoTrading PUBLIC BSM_Pricing_Fundamentals)
+target_include_directories (AlgoTrading PUBLIC BSM_Pricing_Fundamentals Monte_Carlo_Methods Utility)
