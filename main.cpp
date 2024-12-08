@@ -3,7 +3,7 @@
 //
 
 #include "packages.h"
-#include "BSM_Pricing_Fundamentals/Option.h"
+#include "Option_Pricing_Fundamentals/Option.h"
 
 int main() {
 

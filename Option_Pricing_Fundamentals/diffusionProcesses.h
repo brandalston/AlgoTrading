@@ -14,6 +14,8 @@
 #include "matrixUtility.h"
 using namespace std;
 
+typedef double Time;
+typedef double Rate;
 /**********************************************************************************
 Abstract Instrument class
 This class is purely abstract and defines the interface of concrete instruments
@@ -90,8 +92,7 @@ private:
     mutable bool calculated; // tracks if instrument was calculated
 };
 
-typedef double Time;
-typedef double Rate;
+
 /**********************************************************************************
 General diffusion process classes
 This class describes a stochastic process governed by dx(t) = mu(t, x(t))dt +

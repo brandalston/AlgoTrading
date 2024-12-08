@@ -28,11 +28,7 @@ private:
     [in] numberOfSteps: number of steps on path
     [out] none
     **********************************************************************************/
-    BrownianBridge::BrownianBridge(unsigned long numberOfSteps):
-    numberOfSteps(numberOfSteps), leftIndex(numberOfSteps),
-    rightIndex(numberOfSteps), bridgeIndex(numberOfSteps),
-    leftWeight(numberOfSteps), rightWeight(numberOfSteps), stddev(numberOfSteps)
-    {
+    BrownianBridge::BrownianBridge(unsigned long numberOfSteps):numberOfSteps(numberOfSteps), leftIndex(numberOfSteps), rightIndex(numberOfSteps), bridgeIndex(numberOfSteps), leftWeight(numberOfSteps), rightWeight(numberOfSteps), stddev(numberOfSteps) {
         vector<unsigned long> map(numberOfSteps);
         unsigned long i, j, k, l;
         // map is used to indicated which points are already constructed. If map[i] is
@@ -44,8 +40,7 @@ private:
         // the standard deviation of the global
         // step
         leftWeight[0] = rightWeight[0] = 0; // global step to the last point in time
-        for (j = 0, i = 0; i < numberOfSteps; ++i)
-        {
+        for (j = 0, i = 0; i < numberOfSteps; ++i) {
             while (map[j])
                 ++j; // find the next unpopulated entry in the
             // map
@@ -74,22 +69,20 @@ private:
     [in] normalVariates : vector of normal deviates
     [out] none
     **********************************************************************************/
-    void BrownianBridge::buildPath(vector<double>& path, const vector<double>&
-    normalVariates)
-    {
+    void BrownianBridge::buildPath(vector<double>& path, const vector<double>&normalVariates) {
         assert(normalVariates.size() == numberOfSteps && path.size() == numberOfSteps);
         unsigned long i, j, k, l;
         path[numberOfSteps - 1] = stddev[0]*normalVariates[0];
-        for (i = 1; i < numberOfSteps; i++)
-        {
+        for (i = 1; i < numberOfSteps; i++) {
             j = leftIndex[i];
             k = rightIndex[i];
             l = bridgeIndex[i];
-            if (j)
+            if (j) {
                 path[l] = leftWeight[i]*path[j-1] + rightWeight[i]*path[k] +
                 stddev[i]*normalVariates[i];
-            else
+            } else {
                 path[l] = rightWeight[i]*path[k] + stddev[i]*normalVariates[i];
+            }
         }
     }
     /**********************************************************************************
@@ -97,15 +90,13 @@ private:
     [in] numberOfSteps: number of steps per path (= number of deviates needed per path)
     [out] none
     **********************************************************************************/
-    void BrownianBridge::generateDeviates(unsigned long numberOfSteps)
-    {
+    void BrownianBridge::generateDeviates(unsigned long numberOfSteps) {
         double deviate = 0.0;
         srand(time(0)); // initialize RNG
         long seed = (long) rand(); // generate random seed
         long* idum = &seed;
         98 MONTE CARLO SIMULATION
-        for (int i=0; i < numberOfSteps; i++)
-        {
+        for (int i=0; i < numberOfSteps; i++) {
             deviate = util.gasdev(idum);
             normalVariates.push_back(deviate);
         }

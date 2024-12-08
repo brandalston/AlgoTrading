@@ -62,9 +62,9 @@ class MonteCarloMethod {
                 lnS1 = lnS1 + mu*dt + vol*sqrt(dt)*rands[cnt];
                 lnS2 = lnS2 = mu*dt + vol*sqrt(dt)*(-rands[cnt]);
                 // keep track of Sobol number to use
-                if ((cnt + 1) % N == 0)
+                if ((cnt + 1) % N == 0) {
                     cnt = 0;
-                else
+                } else
                     cnt++;
             }
             // convert back to lognormal random variables
@@ -116,15 +116,13 @@ class MonteCarloMethod {
         // standard error
         // stores Faure sequence
         k = 0;
-        for (i = 1; i <= M; i++)
-        {
+        for (i = 1; i <= M; i++) {
             // generate Faure sequence
             x = generateFaure(N,M);
             // initialize log asset prices for next simulation path
             lnSt = lnS;
             lnSt1 = lnS;
-            for (j = 0; j < N; j++)
-            {
+            for (j = 0; j < N; j++) {
                 // get standard normal deviate using polar rejection method
                 deviate = util.polarRejection(x[j],k);
                 nSt = lnSt + mudt + voldt*deviate;
@@ -187,8 +185,7 @@ class MonteCarloMethod {
             // initalize stock price for the next simulation
             lnS1 = log(price);
             lnS2 = log(price);
-            for (j = 0; j < N; j++)
-            {
+            for (j = 0; j < N; j++) {
                 deviate = util.gasdev(idum);
                 // simulate paths
                 72 MONTE CARLO SIMULATION
@@ -198,10 +195,11 @@ class MonteCarloMethod {
             // convert back to lognormal random variables
             S1 = exp(lnS1);
             S2 = exp(lnS2);
-            if (type == ‘C’)
+            if (type == 'C’) {
                 value = 0.5*(max(0, S1 - strike) + max(0,S2 - strike));
-            else // if put
+            } else {// if put
                 value = 0.5*(max(0, strike - S1) + max(0, strike - S2));
+            }
             sum1 = sum1 + value;
             sum2 = sum2 + value*value;
         }
@@ -224,7 +222,7 @@ class MonteCarloMethod {
     double rate : interest rate
     double div : dividend yield
     double T : option maturity
-    char type : ‘C’all or ‘P’ut
+    char type : 'C’all or 'P’ut
     long M : number of simulations
     long N : number of time steps
     [out] double : synthetic option price
@@ -281,8 +279,7 @@ class MonteCarloMethod {
                 d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*(T-i*dt))/(vol*sqrt(T-
                 i*dt));
                 delta = util.normalCalc(d1);
-            }
-            else
+            } else
                 delta = 1.0;
             // adjust total delta
             delta = delta - temp;
@@ -298,8 +295,7 @@ class MonteCarloMethod {
                 MMAValue = MMAValue + numMMA*price;
                 totalMMAValue = MMAValue*totalMMAShares;
                 portValue = totalStockValue - totalMMAValue;
-            }
-            else {
+            } else {
                 // sell shares
                 temp = delta;
                 numShares = delta;
@@ -318,39 +314,33 @@ class MonteCarloMethod {
     }
 
     /**********************************************************************************
-MonteCarloADG : values a European Call option using Monte Carlo with antithetic,
-delta, and gamma control variates. Adapted from Clewlow and Strickland (1998a)
-[in]: double S : asset price
-double X : strike price
-double vol : volatility
-double rate : risk-free rate
-double div : dividend yield
-double T : option maturity
-long N : number of time steps
-long M : number of simulations
-[out] : double callValue
-**********************************************************************************/
-    double MonteCarloMethod::MonteCarloADG(double S, double X, double vol, double rate,
-    double div, double T, long N, long M)
-    {
+    MonteCarloADG : values a European Call option using Monte Carlo with antithetic,
+    delta, and gamma control variates. Adapted from Clewlow and Strickland (1998a)
+    [in]: double S : asset price
+    double X : strike price
+    double vol : volatility
+    double rate : risk-free rate
+    double div : dividend yield
+    double T : option maturity
+    long N : number of time steps
+    long M : number of simulations
+    [out] : double callValue
+    **********************************************************************************/
+    double MonteCarloMethod::MonteCarloADG(double S, double X, double vol, double rate, double div, double T, long N, long M) {
         int i, j;
         double dt = T/N;
         double mudt = (rate - div - 0.5*vol*vol)*dt;
         double voldt = vol*sqrt(dt);
         double erddt = exp((rate - div)*dt); // helps compute E[Si] efficiently
-        double egamma = exp((2*(rate - div) // helps compute gamma control variate
-        + vol*vol)*dt)-2*erddt + 1;
-        double beta1 = -1; // fixed beta coefficent on delta control
-        // variate
-        double beta2 = -0.5; // fixed gamma coefficient of gamma control
-        // variate
+        double egamma = exp((2*(rate - div)+ vol*vol)*dt)-2*erddt + 1; // helps compute gamma control variate
+        double beta1 = -1; // fixed beta coefficent on delta control variate
+        double beta2 = -0.5; // fixed gamma coefficient of gamma control variate
         double sum = 0.0; // summation of call values
         double sum1 = 0.0; // summation of squared call values
         double t; // current time
         double St, St1; // stock prices at current time
         double Stn, Stn1; // stock prices at next time step
-        double CT; // call value at maturity at end of
-        // simulation path
+        double CT; // call value at maturity at end of simulation path
         double cv1; // delta control variate
         double cv2; // gamma control variate
         double delta, gamma; // delta and gamma of positive antithetic
@@ -360,20 +350,17 @@ long M : number of simulations
         double SE; // standard error
         srand(time(0)); // initialize RNG
         long seed = (long) rand() % 100; // seed for random number generator
-        long *idum = &seed; // used for generating standard normal
-        // deviate
+        long *idum = &seed; // used for generating standard normal deviate
         double callValue; // call value
         cout.setf(ios::showpoint); // output format
         cout.precision(4); // set output decimal precision
-        for (i = 1; i <= M; i++)
-        {
+        for (i = 1; i <= M; i++) {
             // initialize variables for simulation
             St = S;
             St1 = S;
             cv1 = 0;
             cv2 = 0;
-            for (j = 1; j <= N; j++)
-            {
+            for (j = 1; j <= N; j++) {
                 // compute hedge sensitivities
                 t = (j-1)*dt;
                 delta = og.calcDelta(St,X,rate,div,vol,T,t);
@@ -398,12 +385,11 @@ long M : number of simulations
             sum1 = sum1 + CT*CT;
         }
         callValue = exp(-rate*T)*(sum/M);
-        cout << “value = ” << callValue << endl;
+        cout << " value = " << callValue << endl;
         SD = sqrt((sum1 - sum1*sum1/M)*exp(-2*rate*T)/(M-1));
-        cout << “stddev = ” << SD << endl;
-        2.7 Hedge Control Variates 81
+        cout << " stddev = " << SD << endl;
         SE = SD/sqrt(M);
-        cout << “stderr = ” << SE << endl;
+        cout << " stderr = " << SE << endl;
         return callValue;
     }
 
@@ -424,30 +410,26 @@ long M : number of simulations
     the stock price
     [out] : double callValue
     **********************************************************************************/
-    double MonteCarlo::JumpDiffusion(double price, double strike, double vol, double
-    rate, double div, double T, int M, int N, double lambda, double kappa)
-    {
+    double MonteCarlo::JumpDiffusion(double price, double strike, double vol, double  rate, double div, double T, int M, int N, double lambda, double kappa) {
         int i, j;
-        double dt; double deviate = 0.0; double deviate1 = 0.0; double payoff = 0.0; double sum = 0.0; double S = price; double mu = rate - div - lambda*kappa; long seed; long* idum = 0; StatUtility util; // time increment, (yrs)
-        // standard normal deviate
-        // Poisson deviate
-        // option payoff
-        // sum payoffs
-        // store stock price
-        // expected return
-        // seed for random number generator
-        // identifies address of seed
-        // statistic utility class
-        srand(time(0)); seed = (long) rand() % 100; idum = &seed;
-        dt = T/N; // initialize random number generator
-        // generate seed
-        // time step
-        for (i = 0; i < M; i++)
-        {
+        double dt; // time increment, (yrs)
+        double deviate = 0.0; // standard normal deviate
+        double deviate1 = 0.0; // Poisson deviate
+        double payoff = 0.0;  // option payoff
+        double sum = 0.0;  // sum payoffs
+        double S = price; // store stock price
+        double mu = rate - div - lambda*kappa; // expected return
+        long seed; // seed for random number generator
+        long* idum = 0;  // identifies address of seed
+        StatUtility util; // statistic utility class
+        srand(time(0)); // initialize random number generator
+        seed = (long) rand() % 100; idum = &seed; // generate seed
+        dt = T/N; // time step
+        
+        for (i = 0; i < M; i++) {
             // initialize stock price for each simulation
             S = price;
-            for(j = 0; j < N; j++)
-            {
+            for(j = 0; j < N; j++) {
                 deviate = util.gasdev(idum); deviate1 = util.poisson(lambda); // generate gaussian deviate
                 // generate Poisson deviate
                 S = S*exp(mu*dt+ vol*sqrt(dt)*deviate + sqrt(dt)*deviate1);

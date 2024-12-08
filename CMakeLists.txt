@@ -10,7 +10,9 @@ add_executable(AlgoTrading main.cpp
         Utility/matrixUtility.h
         constants.h
         Monte_Carlo_Methods/MonteCarlo.h
-        BSM_Pricing_Fundamentals/pathDependentProcesses.h
+        Option_Pricing_Fundamentals/Options.h
+        Option_Pricing_Fundamentals/pathDependentProcesses.h
         Utility/genericUtility.h
+        Option_Pricing_Fundamentals/diffusionProcesses.h
 )
-target_include_directories (AlgoTrading PUBLIC BSM_Pricing_Fundamentals Monte_Carlo_Methods Utility)
+target_include_directories (AlgoTrading PUBLIC Option_Pricing_Fundamentals Monte_Carlo_Methods Utility)

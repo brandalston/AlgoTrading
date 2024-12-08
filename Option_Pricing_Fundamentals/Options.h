@@ -16,8 +16,7 @@
 using namespace std;
 
 
-class Option : public Instrument
-{
+class Option : public Instrument {
 public:
     enum Exercise { European = 'E', American = 'A' };
     enum Type { Call = 'C', Put = 'P' };
@@ -56,8 +55,8 @@ protected:
     double price_; // underlying asset
     double vol_; // volatility
     double dividend_; // dividend yield
-    char type_; // option type ‘C’all or ‘P’ut
-    char exercise_; // exercise type ‘E’uropean and ‘A’merican
+    char type_; // option type 'C’all or 'P’ut
+    char exercise_; // exercise type 'E’uropean and 'A’merican
     Handle<PricingEngine> engine_; // pricing engine
     OptionGreeks og; // option greeks
     StatUtility util; // statistical utility class
@@ -197,8 +196,7 @@ private:
 };
 
 // Black-Scholes-Merton Option
-class BSMOption : public Option
-{
+class BSMOption : public Option {
 public:
     BSMOption() { }
     BSMOption(Option::Type type, double underlying, double strike, double dividendYield, double riskFreeRate, double residualTime, double volatility);
@@ -249,12 +247,11 @@ protected:
 };
 
 // Spread Option
-class SpreadOption : public Option
-{
+class SpreadOption : public Option {
 public:
     SpreadOption() { }
     SpreadOption(Option::Type type, double price1, double price2, double strike, double rate, double vol1, double vol2, double div1, double div2, double  rho, double T, char type, int M, int N);
-    virtual∼ SpreadOption() {}
+    virtual~ SpreadOption() {}
     double calcSpreadCallPrice(double price, double strike, double vol, double rate, double div, double T);
     double calcSpreadPutPrice(double vol, double rate, double div, double strike, double price, double T);
     virtual void setupEngine() const { }
@@ -278,26 +275,23 @@ public:
         **********************************************************************************/
     double SpreadOption::calcMCEuroSpreadOption(double price1, double price2, double strike, double rate, double vol1, double vol2, double div1, double div2, double  rho, double T, char type, int M, int N) {
         int i, j;
-        double dt = T/N; double mu1 = (rate - div1 - 0.5*vol1*vol1); double mu2 = (rate - div2 - 0.5*vol2*vol2); double srho = sqrt(1 - rho*rho); double sum1 = 0.0; double sum2 = 0.0; double S1 = 0.0; double S2 = 0.0; double deviate1 = 0.0; double deviate2 = 0.0 double z1 = 0.0; double z2 = 0.0; double CT = 0.0; double SD = 0.0; double SE = 0.0; double value = 0.0; // size of time step
-        // drift for stock price 1
-        // drift for stock price 2
-        // square root of 1 – rho*rho
-        // sum of all the call values on
-        // stock 1 at time T
-        // sum of all the call values on
-        // stock 2 at time T
-        // stock price 1
-        // stock price 2
-        // deviate for stock price 1
-        // deviate for stock price 2
-        // correlated deviate for stock
-        // price 1
-        // correlated deviate for stock
-        // price 2
-        // option price at maturity
-        // standard deviate of price
-        // standard error of price
-        // spread option price
+        double dt = T/N; // size of time step
+        double mu1 = (rate - div1 - 0.5*vol1*vol1); // drift for stock price 1
+        double mu2 = (rate - div2 - 0.5*vol2*vol2); // drift for stock price 2
+        double srho = sqrt(1 - rho*rho); // square root of 1 – rho*rho
+        double sum1 = 0.0; // sum of all the call values on stock 1 at time T
+        double sum2 = 0.0; // sum of all the call values on stock 2 at time T
+        double S1 = 0.0; // stock price 1 
+        double S2 = 0.0; // stock price 2
+        double deviate1 = 0.0;  // deviate for stock price 1
+        double deviate2 = 0.0  // deviate for stock price 2
+        double z1 = 0.0; // correlated deviate for stock price 1
+        double z2 = 0.0; // correlated deviate for stock price 2
+        double CT = 0.0; // option price at maturity
+        double SD = 0.0; // standard deviate of price
+        double SE = 0.0; // standard error of price
+        double value = 0.0; // spread option price
+        
         srand(time(0)); // initialize RNG
         long seed = (long) rand() % 100; // generate seed
         long* idum = &seed;
@@ -316,7 +310,7 @@ public:
                 S1 = S1*exp(mu1*dt + vol1*z1*sqrt(dt));
                 S2 = S2*exp(mu2*dt + vol2*z2*sqrt(dt));
             }
-            if (type == ‘C’)
+            if (type == 'C’)
                 CT = max(S1 - S2 - strike, 0);
             else
                 CT = max(strike - S1 + S2,0);
@@ -334,7 +328,7 @@ class AsianOption : public Option {
 public:
     AsianOption(double price, double strike, double vol, double rate, double div, double T);
     AsianOption() : value_(0.0) {}
-    ∼AsianOption() {}
+    virtual~ AsianOption() {}
     // modified Black Scholes pricing formula
     double calcBSAsianPrice(double price, double strike, double vol, double rate, double div, double T, char type);
     // calculate arithemic ave. Asian option using Monte Carlo (MCA)
@@ -363,9 +357,7 @@ private:
     int N : number of time steps
     [out] double : price of geometric Asian option
     **********************************************************************************/
-    double AsianOption::calcMCGAsianPrice(double price, double strike, double vol,
-    double rate, double div, double T, char type, long M, long N)
-    {
+    double AsianOption::calcMCGAsianPrice(double price, double strike, double vol, double rate, double div, double T, char type, long M, long N) {
         // initialize variables
         int i, j;
         double G = 0.0; // price of geometric average Asian option
@@ -377,17 +369,17 @@ private:
         double product = 0.0; // product of stock prices
         double payoff = 0.0; // option payoff
         double deltat = 0.0; // step size
-        double stddev = 0.0; double stderror = 0.0; deltat = T/N; mu = rate - div - 0.5*vol*vol; cout.precision(4); // standard deviation
-        // standard error
-        // compute change in step size
-        // compute drift
+        double stddev = 0.0; // standard deviation
+        double stderror = 0.0; // standard error
+        double deltat = T/N; // compute change in step size
+        double mu = rate - div - 0.5*vol*vol; 
         // set output decimal format
+        cout.precision(4); 
         srand(time(0)); // initialize RNG
         long seed = (long) rand() % 100; // generate random number generator
         long *idum = &seed; // store address of seed
         // for each simulation
-        for (i = 0; i <= M; i++)
-        {
+        for (i = 0; i <= M; i++) {
             S = price;
             product = 1;
             for (j = 0; j < N; j++)
@@ -398,7 +390,7 @@ private:
             }
             // compute geometric average
             G = pow(product,(double)1/N);
-            if (type == ‘C’)
+            if (type == 'C’)
                 payoff = max(G – strike,0);
             else
                 payoff = max(strike – G,0);
@@ -424,9 +416,7 @@ private:
     int N : number of time steps
     [out]: double : price of arithmetic Asian option
     **********************************************************************************/
-    double AsianOption::calcMCAAsianPrice(double price, double strike, double vol,
-double rate, double div, double T, char type, int M, int N)
-    {
+    double AsianOption::calcMCAAsianPrice(double price, double strike, double vol, double rate, double div, double T, char type, int M, int N) {
         // initialize variables
         double A = 0.0; double mu = 0.0; // arithmetic average
         // drift
@@ -458,7 +448,7 @@ double rate, double div, double T, char type, int M, int N)
             S = S*exp(mu*deltat + vol*sqrt(deltat)*deviate);
             sum1 += S;
             A = sum1/N;
-            if (type == ‘C’)
+            if (type == 'C’)
                 payoff = max(A - strike, 0);
             else
                 payoff = max(strike – A,0);
@@ -466,14 +456,14 @@ double rate, double div, double T, char type, int M, int N)
             sum2 += payoff*payoff;
         }
         value_= exp(-rate*T)*(sum/M);
-        cout << value = “ << value_ <<endl;
+        cout << value = "  << value_ <<endl;
         stddev = sqrt((sum2 - sum*sum/M)*exp(-2*rate*T)/(M-1));
         stderror = stddev/sqrt(M);
-        cout << “ stddev = ” << stddev << “ ” << “stderror ” << stderror << endl;
+        cout << "  stddev = " << stddev << "  " << " stderror " << stderror << endl;
         return value_;
     }
 
-    /*********************************************************************************/
+    /*********************************************************************************
     calcMCGAsianPrice : computes the price of an geometric Asian option with a
     control variate using Monte Carlo simulation
     [in]: double price : initial stock price
@@ -492,8 +482,8 @@ double rate, double div, double T, char type, int M, int N)
     {
         // initialize variables
         int i, j;
-        double geo = 0.0; double ave = 0.0; // geometric average
-        // arithmetic average
+        double geo = 0.0; // geometric average
+        double ave = 0.0;  // arithmetic average
         double mu = 0.0; // drift
         double stddev = 0.0; // standard deviation
         double stderror = 0.0; // standard error
@@ -510,35 +500,33 @@ double rate, double div, double T, char type, int M, int N)
         long* idum = &seed; // store address of seed
         mu = rate - div - 0.5*vol*vol; // drift
         // simulation
-        for (i = 0; i <= M; i++)
-        {
+        for (i = 0; i <= M; i++) {
             // initialize for each simulation
             S = price;
             product = 1;
             sum = 0;
             sum1 = 0;
-            for (j = 0; j < N; j++)
-            {
+            for (j = 0; j < N; j++) {
                 deviate = util.gasdev(idum);
                 S = S*exp(mu*deltat + vol*sqrt(dt)*deviate);
                 sum = sum + S;
                 product *= S;
             }
-            ave = sum/N; geo = pow(product,(double)1/N); if (type == ‘C’)
+            ave = sum/N; geo = pow(product,(double)1/N);
+            if (type == 'C') {
                 payoff = max(0, (ave - strike) - (geo - strike));
-            else
+            } else {
                 payoff = max(0, (strike - ave) - (strike - geo));
-            sum += payoff;
+            }sum += payoff;
             sum1 += payoff*payoff;
             // calculate arithmetic average
             // calculate geometric average
         }
-        value_ = exp(-rate*T)*(sum/M) +
-        calcMCGAsianPrice(price,strike,vol,rate,div,T,‘C’);
-        cout << value = “ << value_ <<endl;
+        value_ = exp(-rate*T)*(sum/M) + calcMCGAsianPrice(price,strike,vol,rate,div,T,'C');
+        cout << "value = " << value_ <<endl;
         stddev = sqrt((sum1 - sum*sum/M)*exp(-2*rate*T)/(M-1));
         stderror = stddev/sqrt(M);
-        cout << “ stddev = ” << stddev << “ ” << “stderror ” << stderror << endl;
+        cout << "  stddev = " << stddev << "  " << " stderror = " << stderror << endl;
         return value_;
     }
 };
