@@ -12,11 +12,9 @@
 #include <algorithm>
 #include <cmath>
 #include <queue>
+#include <quant>
 #include "/Users/brandonalston/newmat10/newmat.h"
 #include "/Users/brandonalston/newmat10/newmatap.h"
-
-#include <quant>
-using namespace QuantLib;
 using namespace std;
 
 // compute a Sobol sequence
@@ -152,7 +150,6 @@ public:
             x.push_back((double)x[k]);
         }
         return x;
-        // number of time steps
     }
 
     /******************************************************************************
@@ -198,8 +195,7 @@ public:
     int i : ith standard deviate
     [out]: Y[i] : ith standard normal deviate in Y
     ******************************************************************************/
-    double polarRejection(double y, int i)
-    {
+    double polarRejection(double y, int i) {
         double w = 0.0;
         double x1, x2, z1, z2, c;
         double temp = 0.0;
@@ -219,8 +215,7 @@ public:
     }
 
     // Hull’s approximation of the cumulative normal distribution
-    double normalCalc(double d)
-    {
+    double normalCalc(double d) {
         const double a1 = 0.319381530;
         const double a2 = -0.356563782;
         const double a3 = 1.781477937;
@@ -228,7 +223,7 @@ public:
         const double a5 = 1.330274429;
         const double gamma = 0.2316419;
         const double k1 = 1/(1 + gamma*d);
-        const double k2 = 1/(1 – gamma*d);
+        const double k2 = 1/(1 - gamma*d);
         const double normalprime = (1/(sqrt(2*PI)))*exp(-d*d/2);
         double value = 0.0;
         double h = 0.0;

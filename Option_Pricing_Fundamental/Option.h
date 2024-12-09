@@ -9,10 +9,11 @@
 #include <set>
 #include <iostream>
 #include <cmath>
-#include "diffusionProcesses.h"
+#include "diffusionProcess.h"
 #include "statUtility.h"
 #include "constants.h"
 #include "matrixUtility.h"
+#include "genericUtility.h"
 using namespace std;
 
 
@@ -21,9 +22,9 @@ public:
     enum Exercise { European = 'E', American = 'A' };
     enum Type { Call = 'C', Put = 'P' };
     Option();
+    virtual Option() {}
     Option(double price, double strike, double vol, double rate, double div, double T, char type, char exercise);
     Option(const Handle<PricingEngine>& engine);
-    virtual∼Option() {}
     friend class OptionGreeks;
     void setPricingEngine(const Handle<PricingEngine>& engine);
     virtual void performCalculations() const;
@@ -59,8 +60,8 @@ protected:
     char exercise_; // exercise type 'E’uropean and 'A’merican
     Handle<PricingEngine> engine_; // pricing engine
     OptionGreeks og; // option greeks
-    StatUtility util; // statistical utility class
-    struct MatrixUtil* mu; // matrix utility class
+    StatUtility statUtil; // statistical utility class
+    MatrixUtil* matrixUtil; // matrix utility class
 
 
     /*
@@ -70,7 +71,6 @@ protected:
     Option::Option(double price, double strike, double vol, double rate, double div, double T, char type, char exercise)
     : price_(price), strike_(strike), vol_(vol), rate_(rate), dividend_(div), T_(T), type_(type), exercise_(exercise) {}
     */
-
     double Option::OptionGreeks::calcDelta(double price, double strike, double rate, double div, double vol, double T, char type) {
         double d1, delta;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
@@ -112,7 +112,7 @@ protected:
     }
 
     double Option::OptionGreeks::calcTheta(double price, double strike, double rate, double div, double vol, double T, char type) {
-        double d1, d2
+        double d1, d2;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         d2 = d1 - vol*sqrt(T);
         double theta = 0.0;
@@ -200,7 +200,7 @@ class BSMOption : public Option {
 public:
     BSMOption() { }
     BSMOption(Option::Type type, double underlying, double strike, double dividendYield, double riskFreeRate, double residualTime, double volatility);
-    virtual∼ BSMOption() {}
+    virtual BSMOption() {}
     // modifiers
     virtual void setVolatility(double newVolatility);
     virtual void setRiskFreeRate(double newRate);
@@ -225,9 +225,9 @@ protected:
         double d1, d2;
         double callprice;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
-        d2 = d1 – vol*sqrt(T);
-        prob1 = util.normalCalc(d1);
-        prob2 = util.normalCalc(d2);
+        d2 = d1-vol*sqrt(T);
+        prob1 = statUtil.normalCalc(d1);
+        prob2 = statUtil.normalCalc(d2);
         callprice = price*exp(-div*T)*prob1 - strike*exp(-rate*T)*prob2;
         return callprice;
     }
@@ -239,8 +239,8 @@ protected:
         double d1, d2;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         d2 = d1 - vol*sqrt(T);
-        prob1 = util.normalCalc(-d1);
-        prob2 = util.normalCalc(-d2);
+        prob1 = statUtil.normalCalc(-d1);
+        prob2 = statUtil.normalCalc(-d2);
         putprice = strike*exp(-rate*T)*prob2 - price*exp(-div*T)*prob1;
         return putprice;
     }
@@ -256,23 +256,24 @@ public:
     double calcSpreadPutPrice(double vol, double rate, double div, double strike, double price, double T);
     virtual void setupEngine() const { }
     virtual double calculate() const { return value_ ; }
+
     /*********************************************************************************
-        calcMCEuroSpreadOption : computes the value of a European spread option
-        [in] double price1 : price of asset 1
-        double price2 : price of asset 2
-        double strike : strike price
-        double rate : risk-free rate
-        double vol1 : volatility of asset 1
-        double vol2 : volatility of asset 2
-        double div1 : dividend yield of asset 1
-        double div2 : dividend yield of asset 2
-        double rho : correlation of dz1 and dz2
-        double T : maturity of option
-        char type : option type (C)all or (P)ut
-        long M : number of simulations
-        long N : number of time steps
-        [out] : double : price of spread option
-        **********************************************************************************/
+    calcMCEuroSpreadOption : computes the value of a European spread option
+    [in] double price1 : price of asset 1
+    double price2 : price of asset 2
+    double strike : strike price
+    double rate : risk-free rate
+    double vol1 : volatility of asset 1
+    double vol2 : volatility of asset 2
+    double div1 : dividend yield of asset 1
+    double div2 : dividend yield of asset 2
+    double rho : correlation of dz1 and dz2
+    double T : maturity of option
+    char type : option type (C)all or (P)ut
+    long M : number of simulations
+    long N : number of time steps
+    [out] : double : price of spread option
+    **********************************************************************************/
     double SpreadOption::calcMCEuroSpreadOption(double price1, double price2, double strike, double rate, double vol1, double vol2, double div1, double div2, double  rho, double T, char type, int M, int N) {
         int i, j;
         double dt = T/N; // size of time step
@@ -284,7 +285,7 @@ public:
         double S1 = 0.0; // stock price 1 
         double S2 = 0.0; // stock price 2
         double deviate1 = 0.0;  // deviate for stock price 1
-        double deviate2 = 0.0  // deviate for stock price 2
+        double deviate2 = 0.0;  // deviate for stock price 2
         double z1 = 0.0; // correlated deviate for stock price 1
         double z2 = 0.0; // correlated deviate for stock price 2
         double CT = 0.0; // option price at maturity
@@ -302,15 +303,15 @@ public:
             S2 = price2;
             for (j = 0; j < N; j++) {
                 // generate deviates
-                deviate1 = util.gasdev(idum);
-                deviate2 = util.gasdev(idum);
+                deviate1 = statUtil.gasdev(idum);
+                deviate2 = statUtil.gasdev(idum);
                 // calculate correlated deviates
                 z1 = deviate1;
                 z2 = rho*deviate1 + srho*deviate2;
                 S1 = S1*exp(mu1*dt + vol1*z1*sqrt(dt));
                 S2 = S2*exp(mu2*dt + vol2*z2*sqrt(dt));
             }
-            if (type == 'C’)
+            if (type == 'C')
                 CT = max(S1 - S2 - strike, 0);
             else
                 CT = max(strike - S1 + S2,0);
@@ -324,6 +325,7 @@ public:
     }
 };
 
+// Asian Option
 class AsianOption : public Option {
 public:
     AsianOption(double price, double strike, double vol, double rate, double div, double T);
@@ -338,9 +340,8 @@ public:
     virtual void setupEngine() const { }
     virtual double calculate() const { return value_ ; }
 private:
-    double volA; double qA; // Arithmetic ave. volatility for modified Black-Scholes formula
-    // Arithmetic ave. dividend yield for modified Black-Scholes
-    // formula
+    double volA; // Arithmetic ave. volatility for modified Black-Scholes formula
+    double qA; // Arithmetic ave. dividend yield for modified Black-Scholes formula
     double value_; // Asian option price
 
     /**********************************************************************************
@@ -384,16 +385,16 @@ private:
             product = 1;
             for (j = 0; j < N; j++)
             {
-                deviate = util.gasdev(idum);
+                deviate = statUtil.gasdev(idum);
                 S = S*exp(mu*deltat + vol*sqrt(deltat)*deviate);
                 product *= S;
             }
             // compute geometric average
             G = pow(product,(double)1/N);
-            if (type == 'C’)
-                payoff = max(G – strike,0);
+            if (type == 'C')
+                payoff = max(G-strike,0);
             else
-                payoff = max(strike – G,0);
+                payoff = max(strike-G,0);
             sum += payoff;
             sum2 += payoff*payoff;
         }
@@ -418,9 +419,9 @@ private:
     **********************************************************************************/
     double AsianOption::calcMCAAsianPrice(double price, double strike, double vol, double rate, double div, double T, char type, int M, int N) {
         // initialize variables
-        double A = 0.0; double mu = 0.0; // arithmetic average
-        // drift
         int i, j;
+        double A = 0.0; // arithmetic average
+        double mu = 0.0; // drift
         double deviate; // normal deviate
         double stddev = 0.0; // standard deviation
         double stderror = 0.0; // standard error
@@ -436,30 +437,29 @@ private:
         long seed = (long) rand() % 100; // generate seed
         long *idum = &seed;
         // for each simulation
-        for (i = 0; i <= M; i++)
-        {
+        for (i = 0; i <= M; i++) {
             // reinitialize for each simulation
             S = price;
             sum1 = 0;
-            for (j = 0; j <N; j++)
-            {
+            for (j = 0; j <N; j++) {
+                deviate = statUtil.gasdev(idum);
+                S = S*exp(mu*deltat + vol*sqrt(deltat)*deviate);
+                sum1 += S;
             }
-            deviate = util.gasdev(idum);
-            S = S*exp(mu*deltat + vol*sqrt(deltat)*deviate);
-            sum1 += S;
             A = sum1/N;
-            if (type == 'C’)
-                payoff = max(A - strike, 0);
-            else
-                payoff = max(strike – A,0);
+            if (type == 'C') {
+                payoff = max(A-strike, 0);
+            } else {
+                payoff = max(strike-A,0);
+            }
             sum += payoff;
             sum2 += payoff*payoff;
         }
         value_= exp(-rate*T)*(sum/M);
-        cout << value = "  << value_ <<endl;
+        cout << "value = "  << value_ << endl;
         stddev = sqrt((sum2 - sum*sum/M)*exp(-2*rate*T)/(M-1));
         stderror = stddev/sqrt(M);
-        cout << "  stddev = " << stddev << "  " << " stderror " << stderror << endl;
+        cout << "stddev = " << stddev << "  " << "stderror " << stderror << endl;
         return value_;
     }
 
@@ -477,9 +477,7 @@ private:
     int N : number of time steps
     [out]: double : price of geometic Asian option with a control variate
     **********************************************************************************/
-    double AsianOption::calcMCAAsianGCV(double price, double strike, double vol, double
-    rate, double div, double T, char type, int M, int N)
-    {
+    double AsianOption::calcMCAAsianGCV(double price, double strike, double vol, double rate, double div, double T, char type, int M, int N) {
         // initialize variables
         int i, j;
         double geo = 0.0; // geometric average
@@ -507,7 +505,7 @@ private:
             sum = 0;
             sum1 = 0;
             for (j = 0; j < N; j++) {
-                deviate = util.gasdev(idum);
+                deviate = statUtil.gasdev(idum);
                 S = S*exp(mu*deltat + vol*sqrt(dt)*deviate);
                 sum = sum + S;
                 product *= S;
@@ -526,7 +524,7 @@ private:
         cout << "value = " << value_ <<endl;
         stddev = sqrt((sum1 - sum*sum/M)*exp(-2*rate*T)/(M-1));
         stderror = stddev/sqrt(M);
-        cout << "  stddev = " << stddev << "  " << " stderror = " << stderror << endl;
+        cout << "stddev = " << stddev << "  " << "stderror = " << stderror << endl;
         return value_;
     }
 };

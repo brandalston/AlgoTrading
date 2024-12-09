@@ -5,14 +5,16 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(AlgoTrading main.cpp
         main.cpp
-        packages.h
+        MCMConstructor.h
         Utility/statUtility.h
         Utility/matrixUtility.h
-        constants.h
-        Monte_Carlo_Methods/MonteCarlo.h
-        Option_Pricing_Fundamentals/Options.h
-        Option_Pricing_Fundamentals/pathDependentProcesses.h
         Utility/genericUtility.h
-        Option_Pricing_Fundamentals/diffusionProcesses.h
+        Utility/constants.h
+        Utility/handle.h
+        Option_Pricing_Fundamental/Option.h
+        Option_Pricing_Fundamental/diffusionProcess.h
+        Monte_Carlo_Method/MonteCarlo.h
+        Monte_Carlo_Method/pathDependentProcess.h
+        Tree_Models/TreeModel.h
 )
-target_include_directories (AlgoTrading PUBLIC Option_Pricing_Fundamentals Monte_Carlo_Methods Utility)
+target_include_directories (AlgoTrading PUBLIC Option_Pricing_Fundamental Monte_Carlo_Method Tree_Models Utility)

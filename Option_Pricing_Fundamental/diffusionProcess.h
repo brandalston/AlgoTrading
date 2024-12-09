@@ -5,13 +5,16 @@
 #ifndef DIFFUSIONPROCESSES_H
 #define DIFFUSIONPROCESSES_H
 
+#include <vector>
+#include <set>
 #include <iostream>
 #include <string>
 #include <cmath>
-#include "diffusionProcesses.h"
+#include "diffusionProcess.h"
 #include "statUtility.h"
 #include "constants.h"
 #include "matrixUtility.h"
+using namespace std;
 using namespace std;
 
 typedef double Time;
@@ -24,7 +27,7 @@ which will be derived from this one. It implements the Observable interface
 class Instrument : public Patterns::Observer, public Patterns::Observable {
 public:
     Instrument(const string& isinCode, const string& description) : NPV_(0.0), isExpired_(false), isinCode_(isinCode), description_(description), calculated(false) {}
-    virtual∼Instrument() {}
+    virtual Instrument() {}
     // inline definitions
     // returns the ISIN code of the instrument, when given.
     inline string isinCode() const {
@@ -101,7 +104,7 @@ sigma(t, x(t))dz(t).
 class DiffusionProcess {
 public:
     DiffusionProcess(double x0) : x0_(x0) {}
-    virtual∼DiffusionProcess() {}
+    virtual DiffusionProcess() {}
     double x0() const { return x0_; }
     // returns the drift part of the equation, i.e. mu(t, x_t)
     virtual double drift(Time t, double x) const = 0;

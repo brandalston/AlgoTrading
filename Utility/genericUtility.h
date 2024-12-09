@@ -5,10 +5,13 @@
 #ifndef GENERICUTILITY_H
 #define GENERICUTILITY_H
 
+#include <vector>
+#include <set>
+#include <iostream>
+#include <cmath>
 
 class genericUtility {
-    inline int poisson(double lambda)
-    {
+    inline int poisson(double lambda) {
         assert (lambda > 0. );
         double a = exp( -lambda );
         double b = 1;

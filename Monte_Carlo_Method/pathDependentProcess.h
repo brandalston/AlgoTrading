@@ -4,11 +4,19 @@
 
 #ifndef PATHDEPENDENTPROCESSES_H
 #define PATHDEPENDENTPROCESSES_H
+#include <vector>
+#include <set>
+#include <iostream>
+#include <cmath>
+#include "statUtility.h"
+#include "matrixUtility.h"
+#include "genericUtility.h"
+#include "constants.h"
 
 class BrownianBridge {
 public:
     BrownianBridge(unsigned long numberOfSteps);
-    virtual∼BrownianBridge() {};
+    virtual BrownianBridge() {};
     void buildPath(vector<double>& theWienerProcessPath, const vector<double>&
     gaussianVariates);
     void generateDeviates(unsigned long numberOfSteps);
@@ -31,28 +39,22 @@ private:
     BrownianBridge::BrownianBridge(unsigned long numberOfSteps):numberOfSteps(numberOfSteps), leftIndex(numberOfSteps), rightIndex(numberOfSteps), bridgeIndex(numberOfSteps), leftWeight(numberOfSteps), rightWeight(numberOfSteps), stddev(numberOfSteps) {
         vector<unsigned long> map(numberOfSteps);
         unsigned long i, j, k, l;
-        // map is used to indicated which points are already constructed. If map[i] is
-        // zero, path point i is yet unconstructed. map[i] - 1 is the index of the
-        // variate that constructs the path point i.
-        map[numberOfSteps-1] = 1; // the first point in the construction is
-        // the global step
-        bridgeIndex[0] = numberOfSteps - 1; stddev[0] = sqrt(numberOfSteps); // bridge index
-        // the standard deviation of the global
-        // step
+        // map is used to indicated which points are already constructed. If map[i] is zero, path point i is yet
+        // unconstructed. map[i] - 1 is the index of the variate that constructs the path point i.
+        map[numberOfSteps-1] = 1; // the first point in the construction is the global step
+        bridgeIndex[0] = numberOfSteps - 1; // bridge index
+        stddev[0] = sqrt(numberOfSteps); // the standard deviation of the global step
         leftWeight[0] = rightWeight[0] = 0; // global step to the last point in time
         for (j = 0, i = 0; i < numberOfSteps; ++i) {
             while (map[j])
-                ++j; // find the next unpopulated entry in the
-            // map
+                ++j; // find the next unpopulated entry in the map
             k = j;
-            while ((!map[k])) // find the next unpopulated entry in the
-                ++k; // map from there
-            l = j + ((k - 1 - j) >> 1); // l is now the index of the point to
-            // be constructed next
+            while ((!map[k])) // find the next unpopulated entry in the map from there
+                ++k;
+            l = j + ((k - 1 - j) >> 1); // l is now the index of the point to be constructed next
             map[l] = i;
-            bridgeIndex[i] = l; leftIndex[i] = j; // the ith gaussian variate to be used to set point l
-            // point j-1 is the left strut of the bridge for
-            // point l
+            bridgeIndex[i] = l; // the ith gaussian variate to be used to set point l
+            leftIndex[i] = j;  // point j-1 is the left strut of the bridge for point l
             rightIndex[i] = k; // point k is the right strut of the bridge
             leftWeight[i] = (k - l)/(k + 1- j);
             rightWeight[i] = (l + 1 - j)/(k+ 1- j);
@@ -95,7 +97,6 @@ private:
         srand(time(0)); // initialize RNG
         long seed = (long) rand(); // generate random seed
         long* idum = &seed;
-        98 MONTE CARLO SIMULATION
         for (int i=0; i < numberOfSteps; i++) {
             deviate = util.gasdev(idum);
             normalVariates.push_back(deviate);

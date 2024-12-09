@@ -5,4 +5,9 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include <vector>
+#include <set>
+#include <iostream>
+#include <cmath>
+
 #endif //CONSTANTS_H

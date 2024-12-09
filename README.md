@@ -4,7 +4,7 @@ Copyright 2024 Brandon C. Alston
 ## Summary of Code/Folders
 ### SimpleTradingBots
   - Basic ML and automatred trading bots implemented in `Python`
-### BSM, Pricing Fundamentals
+### Option Pricing Fundamentals
   - Derivation and foundations of the Black-Scholes-Morten model for risk-neutral asset pricing
   - The BSM PDE describes evolution of all derivatives whose payoff is a function on a single underlying asset following geometric Brownian motion and time
 ### Monte Carlo Methods 
@@ -22,8 +22,10 @@ Copyright 2024 Brandon C. Alston
     - Long time horizon MC simulation
   - Jump-Diffusion Process and Constant Elasticity of Variance Diffusion Model
     - Option price valuation
-### Binomial Tree
-  - Binomial tree model for pricing European and American equity options. 
-  - Two-state discrete approximation to continuous GBM
-    - The mean and variance of the binomial model match mean and variance of the lognormal distribution underlying GBM
-  - Adapted to incorporate time-varying volatility, price path-dependent options, and price derivatives depending on more than one asset with two-variable binomial trees
+### Tree Models
+  - Binomial tree model for pricing European and American equity options.
+  - Cox-Ross-Rubinstein Binomial Tree Model
+  - Jarrow-Rudd Tree Model
+  //- Two-state discrete approximation to continuous GBM
+    // - The mean and variance of the binomial model match mean and variance of the lognormal distribution underlying GBM
+  // - Adapted to incorporate time-varying volatility, price path-dependent options, and price derivatives depending on more than one asset with two-variable binomial trees
