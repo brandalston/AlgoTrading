@@ -17,19 +17,51 @@
 using namespace std;
 
 
-class TreeModel : public Instrument {
+class Tree : public Instrument
+{
 public:
     enum Exercise { European = 'E', American = 'A' };
     enum Type { Call = 'C', Put = 'P' };
-    TreeModel();
-    virtual TreeModel() {}
+    Tree();
+    virtual Tree() {}
+};
+class BinomialTree : public Tree {
+public:
+    BinomialTree() { }
+    BinomialTree(const Handle<DiffusionProcess>& process,
+    const TimeGrid& timeGrid,
+    bool isPositive = false);
+    double dx(Size i) const { return dx_[i]; }
+    double underlying(Size i, Size index) const;
+    const TimeGrid& timeGrid() const { return timeGrid_; }
+    inline int descendant(int i, int index, int branch) const {
+        return branchings_[i]->descendant(index, branch);
+    }
+    inline double probability(int i, int j, int b) const {
+        return branchings_[i]->probability(j, b);
+    }
+    inline int size(int i) const {
+        if (i==0)
+            return 1;
+        const std::vector<int>& k = branchings_[i-1]->k_;
+        int jMin = *std::min_element(k.begin(), k.end()) - 1;
+        int jMax = *std::max_element(k.begin(), k.end()) + 1;
+        return jMax - jMin + 1;
+    }
+    double underlying(int i, int index) const {
+        if (i==0) return x0_;
+        const std::vector<int>& k = branchings_[i-1]->k_;
+        int jMin = *std::min_element(k.begin(), k.end()) - 1;
+        return x0_ + (jMin*1.0 + index*1.0)*dx(i);
+    }
+protected:
+    std::vector<Handle<TrinomialBranching> > branchings_;
+    double x0_;
+    std::vector<double> dx_; // vector of step sizes
+    TimeGrid timeGrid_;
+
     BinomialTreeCRRAmerican(double price, double strike, double rate, double div, double vol, double T, int N, char type);
     TwoVarBinomialTree(double S1, double S2, double strike, double rate, double div1, double div2, double rho, double vol1, double  vol2, double T, int N, char exercise, char type);
-    friend class OptionGreeks;
-    void setPricingEngine(const Handle<PricingEngine>& engine);
-    virtual void performCalculations() const;
-    virtual void setupEngine() const = 0; // set up pricing engine
-    virtual double calculate() const = 0; // compute price
     /**********************************************************************************
     buildBinomialTreeCRRAmerican : computes the value of an American option using backwards induction in a Cox-Ross-Rubenstein binomial tree model
     [in]: double price : asset price
@@ -43,7 +75,7 @@ public:
     char type : ‘C’all or ‘P’ut
     [out]: double : value of American option
     **********************************************************************************/
-    double TreeModel::BinomialCRRAmerican(double price, double strike, double rate, double div, double vol, double T, int N, char type) {
+    double BinomialTree::BinomialCRRAmerican(double price, double strike, double rate, double div, double vol, double T, int N, char type) {
         int i,j;
         double prob; // probability of up movement
         double S[200][200] = {0.0}; // stock price at node i,j
@@ -103,7 +135,7 @@ public:
     char type : ‘C’all or ‘P’ut
     [out]: double : value of spread option
     **********************************************************************************/
-    double TreeModel::TwoVarBinomialTree (double S1, double S2, double strike, double rate, double div1, double div2, double rho, double vol1, double  vol2, double T, int N, char exercise, char type) {
+    double BinomialTree::TwoVarBinomialTree (double S1, double S2, double strike, double rate, double div1, double div2, double rho, double vol1, double  vol2, double T, int N, char exercise, char type) {
         double dt = T/N; // time step
         double mu1 = rate – div1 – 0.5*vol1*vol1; // drift for stock 1
         double mu2 = rate – div2 – 0.5*vol2*vol2; // drift for stock 2
@@ -153,52 +185,107 @@ public:
         return C[0][0];
     }
 
-    double TreeModel::TrinomialCRRAmerican(double price, double strike, double vol, double rate, double div, double T, long N, char type) {
-        int i, j;
-        double pd; // down probability
-        double pm; // middle probability
-        double pu; // up probability
-        double S[250][250]; // stock price at node i, j
-        double c[250][250]; // call price at node i,j
-        double up = 0.0; // up movement
-        double down =0.0; // down movement
-        double dt = T/N; // time step
-        double drift = rate - div - 0.5*vol*vol; // drift
-        pu = 0.33333 + (drift/vol)*sqrt(dt/6);
-        pd = 0.33333 - (drift/vol)*sqrt(dt/6);
-        pm = 0.33333;
-        up = exp(vol*sqrt(3*dt/2));
-        down = 1/up;
-        // compute stock prices at each node
-        for (i = N; i >= 0; i--) {
-            for (j = -i; j <= i; j++)
-            {
-                S[i][j] = price*pow(up,j);
-            }
-        }
-        // compute payoffs at the final time step
-        for (j = N; j >= -N; j--) {
-            if (type == ‘C’)
-                c[N][j] = max(S[N][j] - strike,0);
-            else
-                c[N][j] = max(strike - S[N][j],0);
-        }
-        // backwards induction
-        for (i=N-1; i >= 0; i--) {
-            for (j=i; j >= -i; j--) {
-                if (type == ‘C’)
-                    c[i][j] = max(exp(-rate*dt)*(pu*c[i+1][j+1] + pm*c[i+1][j] + pd*c[i+1][j-
-                    1]), S[i][j] – strike);
-                else
-                    c[i][j] = max(exp(-rate*dt)*(pu*c[i+1][j+1] + pm*c[i+1][j] + pd*c[i+1][j-
-                    1]), strike - S[i][j]);
-            }
-        }
-        return c[0][0];
-    }
-
 };
 
+class TrinomialTree : public Tree
+{
+public:
+    TrinomialTree() { }
+    TrinomialTree(const Handle<DiffusionProcess>& process,
+    const TimeGrid& timeGrid,
+    bool isPositive = false);
+    double dx(Size i) const { return dx_[i]; }
+    double underlying(Size i, Size index) const;
+    const TimeGrid& timeGrid() const { return timeGrid_; }
+    inline int descendant(int i, int index, int branch) const {
+        return branchings_[i]->descendant(index, branch);
+    }
+    inline double probability(int i, int j, int b) const {
+        return branchings_[i]->probability(j, b);
+    }
+    inline int size(int i) const {
+        if (i==0)
+            return 1;
+        const std::vector<int>& k = branchings_[i-1]->k_;
+        int jMin = *std::min_element(k.begin(), k.end()) - 1;
+        int jMax = *std::max_element(k.begin(), k.end()) + 1;
+        return jMax - jMin + 1;
+    }
+    double underlying(int i, int index) const {
+        if (i==0) return x0_;
+        const std::vector<int>& k = branchings_[i-1]->k_;
+        int jMin = *std::min_element(k.begin(), k.end()) - 1;
+        return x0_ + (jMin*1.0 + index*1.0)*dx(i);
+    }
+protected:
+    std::vector<Handle<TrinomialBranching> > branchings_;
+    double x0_;
+    std::vector<double> dx_; // vector of step sizes
+    TimeGrid timeGrid_;
+
+    TrinomialTree::TrinomialTree(const Handle<DiffusionProcess>& process, const TimeGrid& timeGrid, bool isPositive) : Tree(timeGrid.size()), dx_(1, 0.0), timeGrid_(timeGrid) {
+        x0_ = process->x0();
+        int nTimeSteps = timeGrid.size() - 1;
+        int jMin = 0;
+        int jMax = 0;
+        for (int i = 0; i < nTimeSteps; i++)
+        {
+            Time t = timeGrid[i];
+            Time dt = timeGrid.dt(i);
+            // variance must be independent of x
+            double v2 = process->variance(t, 0.0, dt);
+            double v = sqrt(v2);
+            dx_.push_back(v*sqrt (3.0));
+            Handle<TrinomialBranching> branching(new TrinomialBranching());
+            for (int j = jMin; j <= jMax; j++)
+            {
+                double x = x0_ + j*dx_[i];
+                double m = process->expectation(t, x, dt);
+                int temp = (int)floor ((m-x0_)/dx_[i+1] + 0.5);
+                if (isPositive)
+                {
+                    while (x0_+(temp-1)*dx_[i+1] <= 0)
+                        temp++;
+                }
+                branching->k_.push_back(temp);
+                double e = m - (x0_ + temp*dx_[i+1]);
+                double e2 = e*e;
+                double e3 = e*sqrt (3.0);
+                branching->probs_[0].push_back((1.0 + e2/v2 - e3/v)/6.0);
+                branching->probs_[1].push_back((2.0 - e2/v2)/3.0);
+                branching->probs_[2].push_back((1.0 + e2/v2 + e3/v)/6.0);
+            }
+            branchings_.push_back(branching);
+            const std::vector<int>& k = branching->k_;
+            jMin = *std::min_element(k.begin(), k.end()) - 1;
+            jMax = *std::max_element(k.begin(), k.end()) + 1;
+        }
+    }
+};
+
+/*****************************************************************************
+class TrinomialBranching : Recombining trinomial tree class
+This class defines a recombining trinomial tree approximating a diffusion. The
+diffusion term of the SDE must be independent of the underlying process.
+*****************************************************************************/
+class TrinomialBranching {
+public:
+    TrinomialBranching() : probs_(3) {}
+    virtual TrinomialBranching() {}
+    inline Size descendant(Size index, Size branch) const {
+        return (k_[index] - jMin()) - 1 + branch;
+    }
+    inline double probability(Size index, Size branch) const {
+        return probs_[branch][index];
+    }
+    inline int jMin() const {
+        return *std::min_element(k_.begin(), k_.end()) - 1;
+    }
+private:
+    friend class TrinomialTree;
+    std::vector<int> k_; // branch k
+    std::vector<std::vector<double> > probs_; // branching probabilities
+};
 
 class ConvertibleBond {
 public:
@@ -286,5 +373,6 @@ private:
     }
 
 };
+
 #endif //TREEMODEL_H
 

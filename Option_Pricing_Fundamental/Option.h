@@ -75,9 +75,9 @@ protected:
         double d1, delta;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         if (type == 'C') {
-            delta = exp(-div*T)*util.normalCalcPrime(d1);
+            delta = exp(-div*T)*statUtil.normalCalcPrime(d1);
         } else {
-            delta = exp(-div*T)*(util.normalCalc(d1) - 1);
+            delta = exp(-div*T)*(statUtil.normalCalc(d1) - 1);
         }
         return delta;
     }
@@ -85,7 +85,7 @@ protected:
     double Option::OptionGreeks::calcVega(double price, double strike, double rate, double div, double vol, double T, double t) {
         double d1, vega, normalPrime;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
-        normalPrime = util.normalCalcPrime(d1);
+        normalPrime = statUtil.normalCalcPrime(d1);
         vega = (normalPrime*exp(-div*T))*price*sqrt(T);
         return vega;
     }
@@ -93,7 +93,7 @@ protected:
     double Option::OptionGreeks::calcGamma(double price, double strike, double rate, double div, double vol, double T) {
         double d1, gamma, normalPrime;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
-        normalPrime = util.normalCalcPrime(d1);
+        normalPrime = statUtil.normalCalcPrime(d1);
         gamma = (normalPrime*exp(-div*T))/(price*vol*sqrt(T));
         return gamma;
     }
@@ -104,9 +104,9 @@ protected:
         d2 = d1 - vol*sqrt(T);
         double rho = 0.0;
         if (type == 'C') {
-            rho = strike*T*exp(-rate*T)*util.normalCalc(d2);
+            rho = strike*T*exp(-rate*T)*statUtil.normalCalc(d2);
         } else {
-            rho = -strike*T*exp(-rate*T)*util.normalCalc(-d2);
+            rho = -strike*T*exp(-rate*T)*statUtil.normalCalc(-d2);
         }
         return rho;
     }
@@ -117,13 +117,13 @@ protected:
         d2 = d1 - vol*sqrt(T);
         double theta = 0.0;
         if (type == 'C') {
-            theta = (-price*util.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) +
-            div*price*util.normalCalc(d1)*exp(-div*T) -
-            rate*strike*exp(-rate*T)*util.normalCalc(d2);
+            theta = (-price*statUtil.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) +
+            div*price*statUtil.normalCalc(d1)*exp(-div*T) -
+            rate*strike*exp(-rate*T)*statUtil.normalCalc(d2);
         } else {
-            theta = (-price*util.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) -
-            div*price*util.normalCalc(-d1)*exp(-div*T) +
-            rate*strike*exp(-rate*T)*util.normalCalc(-d2);
+            theta = (-price*statUtil.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) -
+            div*price*statUtil.normalCalc(-d1)*exp(-div*T) +
+            rate*strike*exp(-rate*T)*statUtil.normalCalc(-d2);
         }
         return theta;
     }
@@ -156,7 +156,7 @@ class VanillaOption : public Option {
 public:
     VanillaOption() { }
     VanillaOption(double price, double strike, double rate, double div, double vol, double T, Type type, Exercise exercise, const Handle<PricingEngine>&engine);
-    double impliedVolatility(double targetValue, double accuracy = 1.0e-4, Size maxEvaluations = 100, double minVol = 1.0e-4, double maxVol = 4.0)const;
+    double impliedVolatility(double targetValue, double accuracy = 1.0e-4, size maxEvaluations = 100, double minVol = 1.0e-4, double maxVol = 4.0)const;
     double delta() const; //get delta
     double gamma() const; //get gamma
     double theta() const; //get theta
@@ -256,6 +256,16 @@ public:
     double calcSpreadPutPrice(double vol, double rate, double div, double strike, double price, double T);
     virtual void setupEngine() const { }
     virtual double calculate() const { return value_ ; }
+protected:
+    Option::Type type_;
+    Option::Exercise exercise_;
+    double underlying_;
+    double strike_;
+    double dividendYield_;
+    double riskFreeRate_;
+    double residualTime_;
+    double volatility_;
+    double value_;
 
     /*********************************************************************************
     calcMCEuroSpreadOption : computes the value of a European spread option
@@ -292,11 +302,11 @@ public:
         double SD = 0.0; // standard deviate of price
         double SE = 0.0; // standard error of price
         double value = 0.0; // spread option price
-        
         srand(time(0)); // initialize RNG
         long seed = (long) rand() % 100; // generate seed
         long* idum = &seed;
         N = 1; // no path dependency
+
         for (i = 0; i < M; i++) {
             // initialize prices for each simulation
             S1 = price1;
@@ -372,8 +382,8 @@ private:
         double deltat = 0.0; // step size
         double stddev = 0.0; // standard deviation
         double stderror = 0.0; // standard error
-        double deltat = T/N; // compute change in step size
-        double mu = rate - div - 0.5*vol*vol; 
+        deltat = T/N; // compute change in step size
+        mu = rate - div - 0.5*vol*vol;
         // set output decimal format
         cout.precision(4); 
         srand(time(0)); // initialize RNG

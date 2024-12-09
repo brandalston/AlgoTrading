@@ -24,8 +24,17 @@ Copyright 2024 Brandon C. Alston
     - Option price valuation
 ### Tree Models
   - Binomial tree model for pricing European and American equity options.
-  - Cox-Ross-Rubinstein Binomial Tree Model
-  - Jarrow-Rudd Tree Model
-  //- Two-state discrete approximation to continuous GBM
-    // - The mean and variance of the binomial model match mean and variance of the lognormal distribution underlying GBM
-  // - Adapted to incorporate time-varying volatility, price path-dependent options, and price derivatives depending on more than one asset with two-variable binomial trees
+    - Cox-Ross-Rubinstein Binomial Tree Model
+    - Jarrow-Rudd tree model
+    - Two variable binomial tree
+  - Valuation of convertible bonds
+  - Trinomial tree model for pricing European and American equity options
+    - Jarrow-Rudd trinomial tree model
+    - Cox-Rudd-Rubinstein trinomial tree model
+    - Optimal choice of lambda
+    - Approximate diffusion process
+  <!--- 
+    - Two-state discrete approximation to continuous GBM
+    - The mean and variance of the binomial model match mean and variance of the lognormal distribution underlying GBM
+    - Adapted to incorporate time-varying volatility, price path-dependent options, and price derivatives depending on more than one asset with two-variable binomial trees
+  --- >

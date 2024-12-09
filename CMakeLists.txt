@@ -15,6 +15,6 @@ add_executable(AlgoTrading main.cpp
         Option_Pricing_Fundamental/diffusionProcess.h
         Monte_Carlo_Method/MonteCarlo.h
         Monte_Carlo_Method/pathDependentProcess.h
-        Tree_Models/TreeModel.h
+        Tree_Models/Tree.h
 )
 target_include_directories (AlgoTrading PUBLIC Option_Pricing_Fundamental Monte_Carlo_Method Tree_Models Utility)

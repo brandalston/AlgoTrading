@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 #include <queue>
+#include <random>
 #include <quant>
 #include "/Users/brandonalston/newmat10/newmat.h"
 #include "/Users/brandonalston/newmat10/newmatap.h"
@@ -234,6 +235,22 @@ public:
             value = normalprime*(a1*k2 + a2*pow(k2,2) + a3*pow(k2,3) + a4*pow(k2,4) +
             a5*pow(k2,5));
         return value;
+    }
+
+    double gasdev(long *seed) {
+        mt19937_64 rng;
+        rng.seed(seed);
+        uniform_real_distribution<double> unif(0, 1);
+        // initialize a uniform distribution between 0 and 1
+        double W=2.0, u1, u2, v1, v2;
+        while (W>1) {
+            u1 = unif(rng);
+            u2 = unif(rng);
+            v1 = 2*u1 -1, v2 = 2*u2 - 1;
+            W = pow(v1,2) + pow(v2,2);
+        }
+        double N1 = v1*sqrt(-2*log(W)/W), N2 = v2*sqrt(-2*log(W)/W);
+        return sqrt(pow(N1,2)+pow(N2,2));
     }
 };
 

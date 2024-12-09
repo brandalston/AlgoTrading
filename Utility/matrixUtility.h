@@ -13,8 +13,8 @@
 #include <iostream>
 #include <string>
 #include <cmath>
-#include <ql/quantlib.h>
-using QuantLib;
+// #include <ql>
+// using QuantLib;
 using namespace std;
 
 class MatrixUtil {
@@ -70,7 +70,7 @@ public:
     double* genCorrelatedDeviatesCholesky(const SymmetricMatrix& R, double dt, double z[]) {
         int m = R.Nrows(), n = R.Ncols();
         Matrix lb(m,n);
-        StatUtil util;
+        StatUtility statUtil;
         double deviate = 0.0, dw[4] = {0.0}, sum = 0.0;
         long seed = 0; long* idum = 0; int i, j;
         // number of rows
@@ -87,7 +87,7 @@ public:
         idum = &seed; // store address of seed
         // generate uncorrelated deviates
         for (i = 0; i < m; i++) {
-            deviate = util.gasdev(idum); // generate normal (gaussian) deviate
+            deviate = statUtil.gasdev(idum); // generate normal (gaussian) deviate
             dw[i] = deviate*sqrt(dt);
         }
         // generate correlated deviates
