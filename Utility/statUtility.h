@@ -11,36 +11,105 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 #include <queue>
 #include <random>
-#include <quant>
+// #include <quant>
 #include "/Users/brandonalston/newmat10/newmat.h"
 #include "/Users/brandonalston/newmat10/newmatap.h"
+#include "nrutil.h"
 using namespace std;
 
-// compute a Sobol sequence
 #define GRAY(n) (n ^ ( n >> 1 )) // for Sobol sequence
+#define MAXBIT 30
 #define MAXDIM 5
-#define VMAX 30
-struct sobolp {
-    double sequence[MAXDIM];
-    int x[MAXDIM];
-    int v[MAXDIM][VMAX];
-    double RECIPD;
-    int _dim; int _skip;
-    unsigned long _nextn;
-    unsigned long cur_seed;
-    // dimension of the sample space
-};
-
+#define MAXDIM_NR 6
 class StatUtility {
 public:
     /************************************************************************
-    sobolp_generateSamples : generates a Sobol sequence
-    [in]: struct sobolp* config : pointer to Sobol structure
-    double* samples : pointer to sample values
-    [out]: void
+    Compute a Sobol sequence from Numerical Recipes in C by Press et al. (1992)
+    When n is negative, internally initializes a set of MAXBIT direction numbers for each of MAXDIM
+    different Sobol’ sequences. When n is positive (but ≤MAXDIM), returns as the vector x[1..n]
+    the next values from n of these sequences. (n must not be changed between initializations.)
     ************************************************************************/
+
+    void sobseq(int *n, float x[]) {
+        int j,k,l;
+        unsigned long i,im,ipp;
+        static float fac;
+        static unsigned long in,ix[MAXDIM_NR+1],*iu[MAXBIT+1];
+        static unsigned long mdeg[MAXDIM_NR+1]={0,1,2,3,3,4,4};
+        static unsigned long ip[MAXDIM_NR+1]={0,0,1,1,2,1,4};
+        static unsigned long iv[MAXDIM_NR*MAXBIT+1]={0,1,1,1,1,1,1,3,1,3,3,1,1,5,7,7,3,3,5,15,11,5,15,13,9};
+        if (*n < 0) { // Initialize, don’t return a vector.
+            for (k=1;k<=MAXDIM_NR;k++) {
+                ix[k]=0;
+            }
+            in=0;
+            if (iv[1] != 1) return;
+            fac=1.0/(1L << MAXBIT);
+            for (j=1,k=0;j<=MAXBIT;j++,k+=MAXDIM_NR) {
+                iu[j] = &iv[k];
+            }
+            // To allow both 1D and 2D addressing.
+            for (k=1;k<=MAXDIM_NR;k++) {
+                for (j=1;j<=mdeg[k];j++) {
+                    iu[j][k] <<= (MAXBIT-j);
+                }
+                // Stored values only require normalization.
+                for (j=mdeg[k]+1;j<=MAXBIT;j++) { // Use the recurrence to get other valipp=ip[k]; ues.
+                    i=iu[j-mdeg[k]][k];
+                    i ^= (i >> mdeg[k]);
+                    for (l=mdeg[k]-1;l>=1;l--) {
+                        if (ipp & 1) i ^= iu[j-l][k];
+                        ipp >>= 1;
+                    }
+                    iu[j][k]=i;
+                }
+            }
+        } else { // Calculate the next vector in the seim=in++; quence.
+            for (j=1;j<=MAXBIT;j++) { // Find the rightmost zero bit.
+                if (!(im & 1)) break;
+                im >>= 1;
+            }
+            if (j > MAXBIT) nrerror("MAXBIT too small in sobseq");
+            im=(j-1)*MAXDIM_NR;
+            for (k=1;k<=IMIN(*n,MAXDIM_NR);k++) { // XOR the appropriate direction number into each component of the vector and convert to a floating number.
+                ix[k] ^= iv[im+k];
+                x[k]=ix[k]*fac;
+            }
+        }
+    }
+
+    struct sobolp {
+        double sequence[MAXDIM];
+        int x[MAXDIM];
+        int v[MAXDIM][MAXBIT];
+        double RECIPD;
+        int _dim;
+        int _skip;
+        unsigned long _nextn;
+        unsigned long cur_seed;
+        // dimension of the sample space
+    };
+
+    void nextSobol(struct sobolp* sobolp, unsigned long cur_seed) {
+        /*
+         *int c = 1;
+        int i;
+        int save = sobolp->_nextn;
+        while((save %2) == 1) {
+            c += 1;
+            save = save /2;
+        }
+        for(i=0;i<sobolp->_dim;i++) {
+            sobolp->x[i] = sobolp->x[i]^(sobolp->v[i][c-1]<< (MAXBIT-c));
+            sobolp->sequence[i] = sobolp->x[i]*sobolp->RECIPD;
+        }
+        sobolp->_nextn += 1;
+        */
+    };
+
     void sobolp_generateSamples(struct sobolp* config, double* samples) {
         int i;
         nextSobol(config, config->cur_seed);
@@ -51,8 +120,7 @@ public:
 
     /******************************************************************************
     nextSobolNoSeed : generates the next Sobol seed number to
-    generate the next Sobol value
-    : pointer to Sobol structure
+    generate the next Sobol value pointer to Sobol structure
     [in]: struct sobolp* config [out]: void
     ******************************************************************************/
     static void nextSobolNoSeed(struct sobolp* config) {
@@ -64,7 +132,7 @@ public:
             save = save /2;
         }
         for(i=0;i<config->_dim;i++) {
-            config->x[i] = config->x[i]^(config->v[i][c-1]<< (VMAX-c));
+            config->x[i] = config->x[i]^(config->v[i][c-1]<< (MAXBIT-c));
             config->sequence[i] = config->x[i]*config->RECIPD;
         }
         config->_nextn += 1;
@@ -83,7 +151,7 @@ public:
         int m,i,j,k;
         config->_dim = dim;
         config->_nextn = 0;
-        config->RECIPD = 1.0 / pow( 2.0, VMAX );
+        config->RECIPD = 1.0 / pow( 2.0, MAXBIT );
         config->cur_seed = seed;
         POLY[0] = 3; d[0] = 1;  // x + 1
         POLY[1] = 7; d[1] = 2;  // x^2 + x + 1
@@ -97,7 +165,7 @@ public:
             }
         }
         for( i = 0; i < config->_dim; i++ ) {
-            for( j = d[i]; j < VMAX; j++ ) {
+            for( j = d[i]; j < MAXBIT; j++ ) {
                 config->v[i][j] = config->v[i][j-d[i]];
                 save = POLY[i];
                 m = pow( 2, d[i] );
@@ -122,7 +190,7 @@ public:
     [out]: vector<double> X : the Faure sequence
     ******************************************************************************/
     vector<double> generateFaure(long N, long M) {
-        int p = generatePrime(N);
+        long p = generatePrime(N); p = int(p);
         int l, q, k;
         long v1, v2, v3;
         long value = 0;
@@ -130,15 +198,13 @@ public:
         int m = (int) (log(M)/log(p));
         if (m == 0)
             m = 1;
-        long x[] = {0};
-        unsigned long fact = 0;
+        vector<double> x = {0};
+        long fact = 0;
         for (k = 1; k <= N; k++) {
-            for (l = 0; l <= m; l++)
-            {
+            for (l = 0; l <= m; l++) {
                 value = pow(p,l+1);
                 a[0][l] = (int)((M % value)/p);
-                for (q = l; q <= m; q++)
-                {
+                for (q = l; q <= m; q++) {
                     v1 = factorial(q);
                     v2 = factorial(q-l);
                     v3 = factorial(l);
@@ -199,8 +265,9 @@ public:
     double polarRejection(double y, int i) {
         double w = 0.0;
         double x1, x2, z1, z2, c;
-        double temp = 0.0;
+        // double temp = 0.0;
         double *idum = &y;
+        vector<double> Y;
         do {
             x1 = gasdev((long*)idum);
             x2 = gasdev((long*)idum);
@@ -225,24 +292,24 @@ public:
         const double gamma = 0.2316419;
         const double k1 = 1/(1 + gamma*d);
         const double k2 = 1/(1 - gamma*d);
-        const double normalprime = (1/(sqrt(2*PI)))*exp(-d*d/2);
+        const double normalprime = (1/(sqrt(2*M_PI)))*exp(-d*d/2);
         double value = 0.0;
-        double h = 0.0;
+        // double h = 0.0;
         if (d >= 0)
-            value = 1- normalprime*(a1*k1 + a2*pow(k1,2) + a3*pow(k1,3) + a4*pow(k1,4) +
-            a5*pow(k1,5));
+            value = 1- normalprime*(a1*k1 + a2*pow(k1,2) + a3*pow(k1,3) + a4*pow(k1,4) + a5*pow(k1,5));
         else
-            value = normalprime*(a1*k2 + a2*pow(k2,2) + a3*pow(k2,3) + a4*pow(k2,4) +
-            a5*pow(k2,5));
+            value = normalprime*(a1*k2 + a2*pow(k2,2) + a3*pow(k2,3) + a4*pow(k2,4) + a5*pow(k2,5));
         return value;
     }
-
+    /************************************************
+    Box-Muller algorithm to generate a Gaussian (normal) deviate from U(O,1)
+    ************************************************/
     double gasdev(long *seed) {
         mt19937_64 rng;
         rng.seed(seed);
         uniform_real_distribution<double> unif(0, 1);
         // initialize a uniform distribution between 0 and 1
-        double W=2.0, u1, u2, v1, v2;
+        double W=2.0, u1=0.0, u2=0.0, v1=0.0, v2=0.0;
         while (W>1) {
             u1 = unif(rng);
             u2 = unif(rng);
@@ -252,8 +319,33 @@ public:
         double N1 = v1*sqrt(-2*log(W)/W), N2 = v2*sqrt(-2*log(W)/W);
         return sqrt(pow(N1,2)+pow(N2,2));
     }
-};
 
+    int poisson(double lambda) {
+        /*
+         *assert (lambda > 0. );
+        double a = exp( -lambda );
+        double b = 1;
+        // initialize random number generator
+        srand(0);
+        long seed = (long) rand() % 100;
+        long* idum = &seed;
+        for (int i = 0; b >= a; i++ )
+            b *= gasdev(idum);
+        return i - 1;
+        */
+        double L = exp(-lambda);
+        double p = 1;
+        double k = 0;
+        srand(0);
+        long seed = (long) rand() % 100;
+        long* idum = &seed;
+        do {
+            k++;
+            p *= gasdev(idum);
+        } while( p > L);
+        return (k-1);
+    }
+};
 
 
 #endif //STATUTILITY_H

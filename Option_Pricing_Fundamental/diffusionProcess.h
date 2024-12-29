@@ -15,7 +15,6 @@
 #include "constants.h"
 #include "matrixUtility.h"
 using namespace std;
-using namespace std;
 
 typedef double Time;
 typedef double Rate;

@@ -13,11 +13,12 @@
 #include <iostream>
 #include <string>
 #include <cmath>
-// #include <ql>
+#include "statUtility.h"
+#include <ql>
 // using QuantLib;
 using namespace std;
 
-class MatrixUtil {
+class MatrixUtility {
 public:
     double* genCorrelatedDeviates(const SymmetricMatrix& R, double dt, double z[])
     {
@@ -33,8 +34,10 @@ public:
         double dw[4] = {0.0}; // stores correlated deviates
         DiagonalMatrix D(m); // diagonal matrix
         Matrix V(m,m); // m x n matrix
-        D = EigenValues(R); // get eigenvalues
+        D = genEigenValues(R); // get eigenvalues
         V = genEigenVectors(R); // get eigenvectors
+        StatUtility statUtil;
+
         // store eigenvalues
         for (i = 0; i < m; i++) {
             eigenValue.push_back(D.element(i,i));
@@ -51,7 +54,7 @@ public:
         srand(0); long seed = (long) rand() % 100; long *idum = &seed;
         // generate uncorrelated deviates
         for (i = 0; i < m; i++) {
-            deviate = util.NormalDeviate(idum);
+            deviate = statUtil.gasdev(idum);
             dw[i] = deviate*sqrt(dt);
         }
 

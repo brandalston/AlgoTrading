@@ -22,9 +22,9 @@ public:
     enum Exercise { European = 'E', American = 'A' };
     enum Type { Call = 'C', Put = 'P' };
     Option();
-    virtual Option() {}
     Option(double price, double strike, double vol, double rate, double div, double T, char type, char exercise);
     Option(const Handle<PricingEngine>& engine);
+    virtual~ Option() {}
     friend class OptionGreeks;
     void setPricingEngine(const Handle<PricingEngine>& engine);
     virtual void performCalculations() const;
@@ -34,7 +34,8 @@ public:
     // option greeks
     class OptionGreeks {
     public:
-        StatUtility util; // statistical utility class
+        StatUtility statUtil; // statistical utility class
+        MatrixUtility matUtil; // statistical utility class
         OptionGreeks() {}
         double calcVega(double price, double strike, double rate, double div, double vol, double T, double t);
         double calcDelta(double price, double strike, double rate, double div, double vol, double T, char type);
@@ -61,7 +62,7 @@ protected:
     Handle<PricingEngine> engine_; // pricing engine
     OptionGreeks og; // option greeks
     StatUtility statUtil; // statistical utility class
-    MatrixUtil* matrixUtil; // matrix utility class
+    MatrixUtility matUtil; // matrix utility class
 
 
     /*
@@ -71,7 +72,7 @@ protected:
     Option::Option(double price, double strike, double vol, double rate, double div, double T, char type, char exercise)
     : price_(price), strike_(strike), vol_(vol), rate_(rate), dividend_(div), T_(T), type_(type), exercise_(exercise) {}
     */
-    double Option::OptionGreeks::calcDelta(double price, double strike, double rate, double div, double vol, double T, char type) {
+    double Option::calcDelta(double price, double strike, double rate, double div, double vol, double T, char type) {
         double d1, delta;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         if (type == 'C') {
@@ -82,7 +83,7 @@ protected:
         return delta;
     }
 
-    double Option::OptionGreeks::calcVega(double price, double strike, double rate, double div, double vol, double T, double t) {
+    double Option::calcVega(double price, double strike, double rate, double div, double vol, double T, double t) {
         double d1, vega, normalPrime;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         normalPrime = statUtil.normalCalcPrime(d1);
@@ -90,7 +91,7 @@ protected:
         return vega;
     }
 
-    double Option::OptionGreeks::calcGamma(double price, double strike, double rate, double div, double vol, double T) {
+    double Option::calcGamma(double price, double strike, double rate, double div, double vol, double T) {
         double d1, gamma, normalPrime;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         normalPrime = statUtil.normalCalcPrime(d1);
@@ -98,7 +99,7 @@ protected:
         return gamma;
     }
 
-    double Option::OptionGreeks::calcRho(double price, double strike, double rate, double div, double vol, double T, char type) {
+    double Option::calcRho(double price, double strike, double rate, double div, double vol, double T, char type) {
         double d1, d2;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         d2 = d1 - vol*sqrt(T);
@@ -111,19 +112,16 @@ protected:
         return rho;
     }
 
-    double Option::OptionGreeks::calcTheta(double price, double strike, double rate, double div, double vol, double T, char type) {
+    double Option::calcTheta(double price, double strike, double rate, double div, double vol, double T, char type) {
         double d1, d2;
         d1 = (log(price/strike) + (rate - div + (vol)*(vol)/2)*T)/(vol*sqrt(T));
         d2 = d1 - vol*sqrt(T);
         double theta = 0.0;
+        StatUtility statUtil;
         if (type == 'C') {
-            theta = (-price*statUtil.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) +
-            div*price*statUtil.normalCalc(d1)*exp(-div*T) -
-            rate*strike*exp(-rate*T)*statUtil.normalCalc(d2);
+            theta = (-price*statUtil.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) + div*price*statUtil.normalCalc(d1)*exp(-div*T) - rate*strike*exp(-rate*T)*statUtil.normalCalc(d2);
         } else {
-            theta = (-price*statUtil.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) -
-            div*price*statUtil.normalCalc(-d1)*exp(-div*T) +
-            rate*strike*exp(-rate*T)*statUtil.normalCalc(-d2);
+            theta = (-price*statUtil.normalCalc(d1)*vol*exp(-div*T))/(2*sqrt(T)) - div*price*statUtil.normalCalc(-d1)*exp(-div*T) + rate*strike*exp(-rate*T)*statUtil.normalCalc(-d2);
         }
         return theta;
     }
@@ -200,7 +198,7 @@ class BSMOption : public Option {
 public:
     BSMOption() { }
     BSMOption(Option::Type type, double underlying, double strike, double dividendYield, double riskFreeRate, double residualTime, double volatility);
-    virtual BSMOption() {}
+    virtual~ BSMOption() {}
     // modifiers
     virtual void setVolatility(double newVolatility);
     virtual void setRiskFreeRate(double newRate);
@@ -440,7 +438,7 @@ private:
         double sum1 = 0.0; // sum of stock prices
         double sum2 = 0.0; // sum of squared payoffs
         double payoff = 0.0; // payoff of option
-        deltat = T/N; // step size
+        double dt = T/N; // step size
         mu = rate - div - 0.5*vol*vol; // compute drift
         cout.precision(4); // set output decimal format
         srand(time(0)); // initializer RNG
@@ -453,7 +451,7 @@ private:
             sum1 = 0;
             for (j = 0; j <N; j++) {
                 deviate = statUtil.gasdev(idum);
-                S = S*exp(mu*deltat + vol*sqrt(deltat)*deviate);
+                S = S*exp(mu*dt + vol*sqrt(dt)*deviate);
                 sum1 += S;
             }
             A = sum1/N;
@@ -466,10 +464,10 @@ private:
             sum2 += payoff*payoff;
         }
         value_= exp(-rate*T)*(sum/M);
-        cout << "value = "  << value_ << endl;
+        // cout << "value = "  << value_ << endl;
         stddev = sqrt((sum2 - sum*sum/M)*exp(-2*rate*T)/(M-1));
         stderror = stddev/sqrt(M);
-        cout << "stddev = " << stddev << "  " << "stderror " << stderror << endl;
+        // cout << "stddev = " << stddev << "  " << "stderror " << stderror << endl;
         return value_;
     }
 
@@ -516,25 +514,25 @@ private:
             sum1 = 0;
             for (j = 0; j < N; j++) {
                 deviate = statUtil.gasdev(idum);
-                S = S*exp(mu*deltat + vol*sqrt(dt)*deviate);
+                S = S*exp(mu*dt + vol*sqrt(dt)*deviate);
                 sum = sum + S;
                 product *= S;
             }
             ave = sum/N; geo = pow(product,(double)1/N);
             if (type == 'C') {
-                payoff = max(0, (ave - strike) - (geo - strike));
+                payoff = max(0, ave - geo);//(ave - strike) - (geo - strike));
             } else {
-                payoff = max(0, (strike - ave) - (strike - geo));
+                payoff = max(0, geo - ave);//(strike - ave) - (strike - geo));
             }sum += payoff;
             sum1 += payoff*payoff;
             // calculate arithmetic average
             // calculate geometric average
         }
         value_ = exp(-rate*T)*(sum/M) + calcMCGAsianPrice(price,strike,vol,rate,div,T,'C');
-        cout << "value = " << value_ <<endl;
         stddev = sqrt((sum1 - sum*sum/M)*exp(-2*rate*T)/(M-1));
         stderror = stddev/sqrt(M);
-        cout << "stddev = " << stddev << "  " << "stderror = " << stderror << endl;
+        // cout << "value = " << value_ <<endl;
+        // cout << "stddev = " << stddev << "  " << "stderror = " << stderror << endl;
         return value_;
     }
 };

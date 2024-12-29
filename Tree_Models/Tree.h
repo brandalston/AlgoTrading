@@ -99,7 +99,7 @@ protected:
         }
         // compute terminal payoffs
         for (j = N; j >= 0; j--) {
-            if (type == ‘C’)
+            if (type == 'C')
                 c[N][j] = max(S[N][j]-strike,0);
             else
                 c[N][j] = max(strike-S[N][j],0);
@@ -108,10 +108,10 @@ protected:
         for (i = N-1; i >= 0; i--) {
             for (j = i; j >= 0; j--) {
                 c[i][j] = exp(-rate*dt)*(prob*(c[i+1][j+1]) + (1- prob)*(c[i+1][j]));
-                if (type == ‘C’)
-                    c[i][j] = max(S[i][j] – strike,c[i][j]);
+                if (type == 'C')
+                    c[i][j] = max(S[i][j] - strike, c[i][j]);
                 else
-                    c[i][j] = max(strike – S[i][j],c[i][j]);
+                    c[i][j] = max(strike - S[i][j], c[i][j]);
             }
         }
         return c[0][0];
@@ -137,8 +137,8 @@ protected:
     **********************************************************************************/
     double BinomialTree::TwoVarBinomialTree (double S1, double S2, double strike, double rate, double div1, double div2, double rho, double vol1, double  vol2, double T, int N, char exercise, char type) {
         double dt = T/N; // time step
-        double mu1 = rate – div1 – 0.5*vol1*vol1; // drift for stock 1
-        double mu2 = rate – div2 – 0.5*vol2*vol2; // drift for stock 2
+        double mu1 = rate - div1 - 0.5*vol1*vol1; // drift for stock 1
+        double mu2 = rate - div2 - 0.5*vol2*vol2; // drift for stock 2
         double dx1 = vol1*sqrt(dt); // state step for stock 1
         double dx2 = vol2*sqrt(dt); // state step for stock 2
         double puu, pud, pdu, pdd, dx; // probabilities
@@ -147,9 +147,9 @@ protected:
         double C[100][100] = { 0.0 }; int i,j,k; // call price at time step i and node j
         // compute probabilities
         puu = ((dx1*dx2 + (dx2*mu1 + dx1*mu2 + rho*vol1*vol2)*dt)/(4*dx1*dx2));
-        pud = ((dx1*dx2 + (dx2*mu1 – dx1*mu2 – rho*vol1*vol2)*dt)/(4*dx1*dx2));
-        pdu = ((dx1*dx2 + (-dx2*mu1 + dx1*mu2 – rho*vol1*vol2)*dt)/(4*dx1*dx2));
-        pdd = ((dx1*dx2 + (-dx2*mu1 – dx1*mu2 + rho*vol1*vol2)*dt)/(4*dx1*dx2));
+        pud = ((dx1*dx2 + (dx2*mu1 - dx1*mu2 - rho*vol1*vol2)*dt)/(4*dx1*dx2));
+        pdu = ((dx1*dx2 + (-dx2*mu1 + dx1*mu2 - rho*vol1*vol2)*dt)/(4*dx1*dx2));
+        pdd = ((dx1*dx2 + (-dx2*mu1 - dx1*mu2 + rho*vol1*vol2)*dt)/(4*dx1*dx2));
         // initialize asset prices at maturity
         S1t[-N] = S1*exp(-N*dx1);
         S2t[-N] = S2*exp(-N*dx2);
@@ -161,10 +161,10 @@ protected:
         // compute early exercise payoff at each node
         for (j = -N; j <= N; j += 2) {
             for (k = -N; k <= N; k += 2) {
-                if (type == ‘C’)
-                    C[j][k] = max(0.0, S1t[j] – S2t[k] – strike);
+                if (type == 'C')
+                    C[j][k] = max(0.0, S1t[j] - S2t[k] - strike);
                 else
-                    C[j][k] = max(0.0, strike – St1[j] + St2[k]);
+                    C[j][k] = max(0.0, strike - S1t[j] + S2t[k]);
             }
         }
         // step back through the tree applying early exercise
@@ -173,11 +173,11 @@ protected:
                 for (k = -i; k <= i; k += 2) {
                     // compute risk-neutral price
                     C[j][k] = exp(-rate*T)*(pdd*C[j-1][k-1] + pud*C[j+1][k-1] + pdu*C[j-1][k+1] + puu*C[j+1][k+1]);
-                    if (exercise == ‘A’) {
-                        if (type == ‘C’)
-                            C[j][k] = max(C[j][k], S1t[j] – S2t[k] – strike);
+                    if (exercise == 'A') {
+                        if (type == 'C')
+                            C[j][k] = max(C[j][k], S1t[j] - S2t[k] - strike);
                         else
-                            C[j][k] = max(C[j][k], strike – St1[j] + St2[k]);
+                            C[j][k] = max(C[j][k], strike - S1t[j] + S2t[k]);
                         }
                 }
             }
@@ -360,8 +360,7 @@ private:
                 // compute credit adjusted discount rate
                 creditAdjustedRate = cp[i][j]*rates[i] + (1- cp[i][j])*creditSpread;
                 // compute holding value
-                H = 0.5*((V[i+1][j+1] + interest)/(1 + creditAdjustedRate*dt) + (V[i+1][j]
-                + interest)/(1 + creditAdjustedRate*dt));
+                H = 0.5*((V[i+1][j+1] + interest)/(1 + creditAdjustedRate*dt) + (V[i+1][j]+ interest)/(1 + creditAdjustedRate*dt));
                 // check that stock price exceeds conversion price
                 if (S[i][j] >= conversionPrice)
                     V[i][j] = max(conversionRatio*S[i][j],min(H,call[i][j] + interest));

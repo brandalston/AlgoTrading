@@ -9,7 +9,8 @@
 #include <set>
 #include <iostream>
 #include <cmath>
-#include "diffusionProcesses.h"
+#include <random>
+#include "diffusionProcess.h"
 #include "statUtility.h"
 #include "constants.h"
 #include "matrixUtility.h"
@@ -45,20 +46,22 @@ class MonteCarloMethod {
         double dt = T/N; // time step
         double mu = rate - div - 0.5*vol*vol;// drift
         double rands[5]; // stores random variables
+        StatUtility statUtil;
         cout.precision(4); // output decimal format precision
         int cnt = 0; // counter
         struct sobolp sp{}; // Sobol sequence structure
         srand(time(0)); // initialize RNG
         long seed = (long) rand() % 100; // generate seed
+
         // initialize Sobol sequnce
-        sobolp_init(&sp,dim,seed);
+        statUtil.sobolp_init(&sp,dim,seed);
         for (i = 0; i < M; i++) {
-            // initalize stock price for the next simulation
+            // initialize stock price for the next simulation
             lnS1 = log(price);
             lnS2 = log(price);
             for (j = 0; j < N; j++) {
                 // generate Sobol samples
-                sobolp_generateSamples(&sp,rands);
+                statUtil.sobolp_generateSamples(&sp,rands);
                 // generate path and antithetic path
                 lnS1 = lnS1 + mu*dt + vol*sqrt(dt)*rands[cnt];
                 lnS2 = lnS2 = mu*dt + vol*sqrt(dt)*(-rands[cnt]);
@@ -74,17 +77,17 @@ class MonteCarloMethod {
             if (type == 'C') {
                 value = 0.5*(max(0, S1 - strike) + max(0, S2 - strike));
             } else {
-                value = 0.5*(max(0, strike - S1) + max(0,strike - S2));
+                value = 0.5*(max(0, strike - S1) + max(0, strike - S2));
             }
             sum1 = sum1 + value;
             sum2 = sum2 + value*value;
         }
         // compute standard deviation
         SD = sqrt((exp(-2*rate*T)/(M-1))*(sum2 - (sum1*sum1)/M));
-        cout << "stddev " << " " < SD < endl;
+        // cout << "stddev " << " " < SD < endl;
         // compute standard error
         SE = SD/sqrt(M);
-        cout << "stdderr " << " " << SE << endl;
+        // cout << "stdderr " << " " << SE << endl;
         return exp(-rate*T)*sum1/M;
     }
 
@@ -102,31 +105,34 @@ class MonteCarloMethod {
     **********************************************************************************/
     double MonteCarloMethod::MonteCarloFaureQuasiRandom (double S, double X, double vol, double rate, double div, double T, long N, long M) {
         int i, j, k;
-        double dt = T/N; double mudt = (rate - div - 0.5*vol*vol)*dt; double voldt = vol*sqrt(dt); double sum = 0.0;
-        double sum1 = 0.0;
-        double lnSt, lnSt1, St, St1;
-        double lnS = log(S);
+        double dt = T/N; // time step
+        double mudt = (rate - div - 0.5*vol*vol)*dt; // drift
+        double voldt = vol*sqrt(dt); // diffusion term
+        double sum = 0.0; // sum of payoffs
+        double sum1 = 0.0; // sum of sqaured payoffs
+        double lnSt, lnSt1, St, St1; // stock price, log of stock price
+        double lnS = log(S); // log of initial stock price
         double deviate = 0.0;
         double callValue = 0.0;
-        double SD = 0.0; double SE = 0.0; vector<double> x; cout.setf(ios::showpoint);
+        double SD = 0.0; // standard deviation
+        double SE = 0.0; // standard error
+        vector<double> x;
+        cout.setf(ios::showpoint);
         cout.precision(3);
-        // step step
-        // drift
-        // diffusion term
-        // standard deviation
-        // standard error
+        StatUtility statUtil;
+
         // stores Faure sequence
         k = 0;
         for (i = 1; i <= M; i++) {
             // generate Faure sequence
-            x = generateFaure(N,M);
+            x = statUtil.generateFaure(N,M);
             // initialize log asset prices for next simulation path
             lnSt = lnS;
             lnSt1 = lnS;
             for (j = 0; j < N; j++) {
                 // get standard normal deviate using polar rejection method
-                deviate = util.polarRejection(x[j],k);
-                nSt = lnSt + mudt + voldt*deviate;
+                deviate = statUtil.polarRejection(x[j],k);
+                lnSt = lnSt + mudt + voldt*deviate;
                 // compute antithetic
                 lnSt1 = lnSt1 + mudt + voldt*(-deviate);
                 // increment index to retrieve deviate stored in vector Y in polar rejection method
@@ -134,15 +140,15 @@ class MonteCarloMethod {
             }
             St = exp(lnSt);
             St1 = exp(lnSt1);
-            callValue = 0.5*(max(0, St - X) + max(0,St1-X));
+            callValue = 0.5*(max(0, St - X) + max(0,St1 - X));
             sum = sum + callValue;
             sum1 = sum1 + callValue*callValue;
         }
         callValue = exp(-rate*T)*(sum/M);
         SD = sqrt(exp(-2*rate*T)*(sum1/M) - callValue*callValue);
-        cout << "stdev = " << SD << endl;
         SE = SD/sqrt(M-1);
-        cout << "stderr = " << SE << endl;
+        // cout << "stdev = " << SD << endl;
+        // cout << "stderr = " << SE << endl;
         return callValue;
     }
 
@@ -161,16 +167,14 @@ class MonteCarloMethod {
     **********************************************************************************/
     double MonteCarloMethod::MonteCarloAntithetic (double price, double strike, double vol, double rate, double div, double T, long M, long N, char type) {
         int i, j;
-        double deviate; double sum1 = 0.0; double sum2 = 0.0; double value = 0.0; double S1 = price; double S2 = price; double lnS1 = log(price); // standard normal deviate
-        // sum of payoffs
-        // sum of squared payoffs
-        // value of option
-        // stock price for +deviate
-        // stock price for -deviate
-        // log of the initial stock price for
-        // +deviate
-        double lnS2 = log(price); // log of the initial stock price for
-        // -deviate
+        double deviate; // standard normal deviate
+        double sum1 = 0.0; // sum of payoffs
+        double sum2 = 0.0; // sum of squared payoffs
+        double value = 0.0; // value of option
+        double S1 = price; // stock price for +deviate
+        double S2 = price; // stock price for -deviate
+        double lnS1 = log(price); // log of the initial stock price for deviate
+        double lnS2 = log(price); // log of the initial stock price for deviate
         double SD; // standard deviation
         double SE; // standard error
         double deltat = (double) T/N; // time step
@@ -180,8 +184,7 @@ class MonteCarloMethod {
         long* idum = &seed; // store seed address
         cout.setf(ios::showpoint);
         cout.precision(4);
-        for (i = 0; i < M; i++)
-        {
+        for (i = 0; i < M; i++) {
             // initalize stock price for the next simulation
             lnS1 = log(price);
             lnS2 = log(price);
@@ -203,13 +206,13 @@ class MonteCarloMethod {
             sum2 = sum2 + value*value;
         }
         value = exp(-rate*T)*sum1/M;
-        cout << "value = " << value << endl;
         // compute standard deviation
         SD = sqrt((exp(-2*rate*T)/(M-1))*(sum2 - (sum1*sum1)/M));
-        cout << "stdev = " << SD << endl;
         // compute standard error
         SE = SD/sqrt(M);
-        cout << "stderr = " << SE << endl;
+        // cout << "value = " << value << endl;
+        // cout << "stdev = " << SD << endl;
+        // cout << "stderr = " << SE << endl;
         return value;
     }
     /**********************************************************************************
@@ -308,7 +311,7 @@ class MonteCarloMethod {
                 portValue = totalStockValue - totalMMAValue;
             }
         }
-        std::cout << "final cost: " << totalMMAValue - totalStockValue << endl;
+        // cout << "final cost: " << totalMMAValue - totalStockValue << endl;
         return totalMMAValue-totalStockValue;
     }
 
@@ -331,7 +334,7 @@ class MonteCarloMethod {
         double mudt = (rate - div - 0.5*vol*vol)*dt;
         double voldt = vol*sqrt(dt);
         double erddt = exp((rate - div)*dt); // helps compute E[Si] efficiently
-        double egamma = exp((2*(rate - div)+ vol*vol)*dt)-2*erddt + 1; // helps compute gamma control variate
+        double egamma = exp((2*(rate - div) + vol*vol)*dt)-2*erddt + 1; // helps compute gamma control variate
         double beta1 = -1; // fixed beta coefficent on delta control variate
         double beta2 = -0.5; // fixed gamma coefficient of gamma control variate
         double sum = 0.0; // summation of call values
@@ -353,6 +356,7 @@ class MonteCarloMethod {
         double callValue; // call value
         cout.setf(ios::showpoint); // output format
         cout.precision(4); // set output decimal precision
+        StatUtility statUtil;
         for (i = 1; i <= M; i++) {
             // initialize variables for simulation
             St = S;
@@ -367,7 +371,7 @@ class MonteCarloMethod {
                 gamma = og.calcGamma(St,X,rate,div,vol,T,t);
                 gamma1 = og.calcGamma(St1,X,rate,div,vol,T,t);
                 // generate gaussian deviate
-                deviate = util.gasdev(idum);
+                deviate = statUtil.gasdev(idum);
                 // evolve asset price
                 Stn = St*exp(mudt + voldt*deviate);
                 Stn1 = St1*exp(mudt + voldt*(-deviate));
@@ -383,11 +387,11 @@ class MonteCarloMethod {
             sum1 = sum1 + CT*CT;
         }
         callValue = exp(-rate*T)*(sum/M);
-        cout << "value = " << callValue << endl;
         SD = sqrt((sum1 - sum1*sum1/M)*exp(-2*rate*T)/(M-1));
-        cout << " stddev = " << SD << endl;
         SE = SD/sqrt(M);
-        cout << "stderr = " << SE << endl;
+        // cout << "value = " << callValue << endl;
+        // cout << " stddev = " << SD << endl;
+        // cout << "stderr = " << SE << endl;
         return callValue;
     }
 
@@ -419,7 +423,8 @@ class MonteCarloMethod {
         double mu = rate - div - lambda*kappa; // expected return
         long seed; // seed for random number generator
         long* idum = 0;  // identifies address of seed
-        StatUtility util; // statistic utility class
+        StatUtility statUtil; // statistic utility class
+        GenericUtility genUtil;
         srand(time(0)); // initialize random number generator
         seed = (long) rand() % 100; idum = &seed; // generate seed
         dt = T/N; // time step
@@ -428,8 +433,8 @@ class MonteCarloMethod {
             // initialize stock price for each simulation
             S = price;
             for(j = 0; j < N; j++) {
-                deviate = util.gasdev(idum); deviate1 = util.poisson(lambda); // generate gaussian deviate
-                // generate Poisson deviate
+                deviate = statUtil.gasdev(idum); // generate gaussian deviate
+                deviate1 = genUtil.poisson(lambda); // generate Poisson deviate
                 S = S*exp(mu*dt+ vol*sqrt(dt)*deviate + sqrt(dt)*deviate1);
             }
             payoff = max(S-strike, 0);
