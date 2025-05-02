@@ -1,6 +1,8 @@
 //
-// Created by Brandon Alston on 11/13/24.
 //
+//
+
+
 
 #ifndef MONTECARLO_H
 #define MONTECARLO_H
